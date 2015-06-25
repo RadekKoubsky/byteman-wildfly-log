@@ -1,0 +1,16 @@
+RULE logServletHandler.handleRequest
+
+CLASS io.undertow.servlet.handlers.ServletHandler
+
+METHOD handleRequest
+HELPER org.jboss.byteman.koubsky.LogHelper
+AT ENTRY
+
+
+IF true
+
+DO log($CLASS, "DEBUG", "Method handleRequest, request info: " + 
+		" URL = " + $1.getRequestURL() + ", protocol = " + $1.getProtocol() + 
+		", method = " + $1.getRequestMethod() + ", query string: " + $1.getQueryString())
+
+ENDRULE
