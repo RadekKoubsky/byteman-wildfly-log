@@ -1,16 +1,24 @@
+HELPER org.jboss.byteman.koubsky.LogHelper
+
 RULE logServletHandler.handleRequest
 
 CLASS io.undertow.servlet.handlers.ServletHandler
-
-METHOD handleRequest
-HELPER org.jboss.byteman.koubsky.LogHelper
+METHOD handleRequest(HttpServerExchange)
 AT ENTRY
-
-
 IF true
 
 DO log($CLASS, "DEBUG", "Method handleRequest, request info: " + 
 		" URL = " + $1.getRequestURL() + ", protocol = " + $1.getProtocol() + 
 		", method = " + $1.getRequestMethod() + ", query string: " + $1.getQueryString())
+
+ENDRULE
+
+RULE logJSPConfig
+
+CLASS org.wildfly.extension.undertow.JSPConfig
+METHOD <init>
+AT EXIT
+IF true
+DO log($CLASS, "DEBUG", "JSP configuration, initParams (null if jsp support is disabled ): " + $this.servletInfo.getInitParams())
 
 ENDRULE

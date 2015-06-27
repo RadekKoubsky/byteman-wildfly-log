@@ -13,14 +13,14 @@ public class LogHelper extends Helper{
         super(rule);
     }
 
-    public void log(final String loggerName, final String level,final String message){
+    public void log(final String loggerName, final String level, final String message){
         final Logger logger = LogManager.getLogManager().getLogger(loggerName);
         if(logger != null){
             logger.log(Level.parse(level), message);
         }
     }
 
-    public void log(final String loggerName, final String level,final String message, final Throwable thrown){
+    public void log(final String loggerName, final String level, final String message, final Throwable thrown){
         final Logger logger = LogManager.getLogManager().getLogger(loggerName);
         if(logger != null){
             logger.log(Level.parse(level), message, thrown);
