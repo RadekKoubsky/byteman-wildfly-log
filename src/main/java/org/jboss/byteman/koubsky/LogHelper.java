@@ -13,27 +13,17 @@ public class LogHelper extends Helper{
         super(rule);
     }
 
-    public void log(final String loggerName, final String level, final String message, final Thread thread){
+    public void log(final String loggerName, final String level, final String message){
         final Logger logger = LogManager.getLogManager().getLogger(loggerName);
         if(logger != null){
-            this.setThreadName(thread);
-            logger.log(Level.parse(level), message);
+            logger.log(Level.parse(level), "[ThreadId-" + Thread.currentThread().getId() + "] " + message);
         }
     }
 
-    public void log(final String loggerName, final String level, final String message, final Throwable thrown, final Thread thread){
+    public void log(final String loggerName, final String level, final String message, final Throwable thrown){
         final Logger logger = LogManager.getLogManager().getLogger(loggerName);
         if(logger != null){
-            this.setThreadName(thread);
-            logger.log(Level.parse(level), message, thrown);
-        }
-    }
-
-    private void setThreadName(final Thread thread){
-        try {
-            thread.setName("Thread-" + thread.getId());
-        } catch (final Exception e) {
-            e.printStackTrace();
+            logger.log(Level.parse(level), "[ThreadId-" + Thread.currentThread().getId() + "] " + message, thrown);
         }
     }
 }

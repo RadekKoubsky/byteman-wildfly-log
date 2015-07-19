@@ -1,25 +1,63 @@
 HELPER org.jboss.byteman.koubsky.LogHelper
 
+#Logging undertow handlers chain
 RULE logServletHandler.handleRequest
-
 CLASS io.undertow.servlet.handlers.ServletHandler
 METHOD handleRequest(HttpServerExchange)
 AT ENTRY
 IF true
-
 DO log($CLASS, "DEBUG", "Method handleRequest, request info: " + 
 		" URL = " + $1.getRequestURL() + ", protocol = " + $1.getProtocol() + 
-		", method = " + $1.getRequestMethod() + ", query string: " + $1.getQueryString(), Thread.currentThread())
-
+		", method = " + $1.getRequestMethod() + ", query string: " + $1.getQueryString())
 ENDRULE
 
-RULE logJSPConfig
+RULE logServletSecurityRoleHandler.handleRequest.canAccess
+CLASS io.undertow.servlet.handlers.security.ServletSecurityRoleHandler
+METHOD handleRequest(HttpServerExchange)
+AT LINE 59
+IF true
+DO log($CLASS, "DEBUG", "Method handleRequest, user can access a given resource, continuing in handlers chain to ServletHandler.")
+ENDRULE
 
+RULE logServletSecurityRoleHandler.handleRequest.SC_FORBIDDEN
+CLASS io.undertow.servlet.handlers.security.ServletSecurityRoleHandler
+METHOD handleRequest(HttpServerExchange)
+AT LINE 57
+IF true
+DO log($CLASS, "DEBUG", "Method handleRequest, user cannot access a given resource, sending SC_FORBIDDEN(403).")
+ENDRULE
+
+RULE logServletDispatchingHandler.handleRequest
+CLASS io.undertow.servlet.handlers.ServletDispatchingHandler
+METHOD handleRequest(HttpServerExchange)
+AT ENTRY
+IF true
+DO log($CLASS, "DEBUG", "Method handleRequest, dispatching to the resolved servlet: " + $1.getRelativePath())
+ENDRULE
+
+RULE logSecurityContextAssociationHandler.handleRequest
+CLASS org.wildfly.extension.undertow.security.SecurityContextAssociationHandler
+METHOD handleRequest(HttpServerExchange)
+AT LINE 75
+IF true
+DO log($CLASS, "DEBUG", "Method handleRequest, trying to set RunAsIdentity: \n RunAsIdentity = " + $runAsIdentity
+		+ "; \n SecurityContext = " + $sc)
+ENDRULE
+
+RULE logPredicateHandler.handleRequest
+CLASS io.undertow.server.handlers.PredicateHandler
+METHOD handleRequest(HttpServerExchange)
+AT LINE 43
+IF true
+DO log($CLASS, "DEBUG", "Method handleRequest, resolving predicates for request in HttpServerExchange. \n TrueHandler = " + $0.trueHandler
+		+ " \n FalseHandler = " + $0.falseHandler + " \n Resulted handler: " + $next)
+ENDRULE
+
+#Logging info about JSP config
+RULE logJSPConfig
 CLASS org.wildfly.extension.undertow.JSPConfig
 METHOD <init>
 AT EXIT
 IF true
-DO log($CLASS, "DEBUG", "JSP configuration, initParams (null if jsp support is disabled ): " + $this.servletInfo.getInitParams(),
-		 Thread.currentThread())
-
+DO log($CLASS, "DEBUG", "JSP configuration, initParams (null if jsp support is disabled ): " + $this.servletInfo.getInitParams())
 ENDRULE
