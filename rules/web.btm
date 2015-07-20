@@ -39,9 +39,11 @@ RULE logSecurityContextAssociationHandler.handleRequest
 CLASS org.wildfly.extension.undertow.security.SecurityContextAssociationHandler
 METHOD handleRequest(HttpServerExchange)
 AT LINE 75
+BIND scString = $sc == null ? "null" : "Security domain = " + $sc.getSecurityDomain() + ", Subject info: " + $sc.getSubjectInfo() + 
+				", context map = " + $sc.getData() + ", incomingRunAs = " + $sc.getIncomingRunAs() + ", outgoingRunAs = " + $sc.getOutgoingRunAs();
 IF true
 DO log($CLASS, "DEBUG", "Method handleRequest, trying to set RunAsIdentity: \n RunAsIdentity = " + $runAsIdentity
-		+ "; \n SecurityContext = " + $sc)
+		+ "; \n SecurityContext: " + scString)
 ENDRULE
 
 RULE logPredicateHandler.handleRequest
@@ -51,6 +53,36 @@ AT LINE 43
 IF true
 DO log($CLASS, "DEBUG", "Method handleRequest, resolving predicates for request in HttpServerExchange. \n TrueHandler = " + $0.trueHandler
 		+ " \n FalseHandler = " + $0.falseHandler + " \n Resulted handler: " + $next)
+ENDRULE
+
+RULE logSSLInformationAssociationHandler.handleRequest.addSSLAttributes
+CLASS io.undertow.servlet.handlers.security.SSLInformationAssociationHandler
+METHOD handleRequest(HttpServerExchange)
+AT LINE 122
+IF true
+DO log($CLASS, "DEBUG", "Method handleRequest, adding SSL attributes to request: \n" 
+		+ "javax.servlet.request.cipher_suite = " + $request.getAttribute("javax.servlet.request.cipher_suite")
+		+ "javax.servlet.request.key_size = " + $request.getAttribute("javax.servlet.request.key_size")
+		+ "javax.servlet.request.ssl_session_id = " + $request.getAttribute("javax.servlet.request.ssl_session_id")
+		)
+ENDRULE
+
+RULE logSSLInformationAssociationHandler.handleRequest.addCertificatesAttribute
+CLASS io.undertow.servlet.handlers.security.SSLInformationAssociationHandler
+METHOD handleRequest(HttpServerExchange)
+AT LINE 127
+IF true
+DO log($CLASS, "DEBUG", "Method handleRequest, adding X509 certificates to request: \n" 
+		+ "javax.servlet.request.X509Certificate = " + $certs
+		)
+ENDRULE
+
+RULE logSSLInformationAssociationHandler.handleRequest.NoSSL
+CLASS io.undertow.servlet.handlers.security.SSLInformationAssociationHandler
+METHOD handleRequest(HttpServerExchange)
+AT LINE 131
+IF $ssl == null
+DO log($CLASS, "DEBUG", "Method handleRequest, SSLSessionInfo is null, SSL attributes and X509 certificates are not added to request.")
 ENDRULE
 
 #Logging info about JSP config
