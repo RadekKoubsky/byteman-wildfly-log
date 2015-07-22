@@ -6,7 +6,7 @@ CLASS io.undertow.servlet.handlers.ServletHandler
 METHOD handleRequest(HttpServerExchange)
 AT ENTRY
 IF true
-DO log($CLASS, "DEBUG", "Method handleRequest, request info: " + 
+DO log($CLASS, "DEBUG", "(Method handleRequest) Request info: " + 
 		" URL = " + $1.getRequestURL() + ", protocol = " + $1.getProtocol() + 
 		", method = " + $1.getRequestMethod() + ", query string: " + $1.getQueryString())
 ENDRULE
@@ -14,17 +14,18 @@ ENDRULE
 RULE logServletSecurityRoleHandler.handleRequest.canAccess
 CLASS io.undertow.servlet.handlers.security.ServletSecurityRoleHandler
 METHOD handleRequest(HttpServerExchange)
-AT LINE 59
+AT INVOKE io.undertow.server.HttpHandler.handleRequest(HttpServerExchange) 1
 IF true
-DO log($CLASS, "DEBUG", "Method handleRequest, user can access a given resource, continuing in handlers chain to ServletHandler.")
+DO log($CLASS, "DEBUG", "(Method handleRequest) User can access a given resource, continuing in handlers chain to ServletHandler.")
 ENDRULE
 
 RULE logServletSecurityRoleHandler.handleRequest.SC_FORBIDDEN
 CLASS io.undertow.servlet.handlers.security.ServletSecurityRoleHandler
 METHOD handleRequest(HttpServerExchange)
-AT LINE 57
+AT INVOKE javax.servlet.http.HttpServletResponse.sendError(int) 1
 IF true
-DO log($CLASS, "DEBUG", "Method handleRequest, user cannot access a given resource, sending SC_FORBIDDEN(403).")
+DO log($CLASS, "DEBUG", "(Method handleRequest) User cannot access a given resource, " + 
+			"sending an error response to the client with status SC_FORBIDDEN(403).")
 ENDRULE
 
 RULE logServletDispatchingHandler.handleRequest
@@ -32,35 +33,35 @@ CLASS io.undertow.servlet.handlers.ServletDispatchingHandler
 METHOD handleRequest(HttpServerExchange)
 AT ENTRY
 IF true
-DO log($CLASS, "DEBUG", "Method handleRequest, dispatching to the resolved servlet: " + $1.getRelativePath())
+DO log($CLASS, "DEBUG", "(Method handleRequest) Dispatching to the resolved servlet: " + $1.getRelativePath())
 ENDRULE
 
 RULE logSecurityContextAssociationHandler.handleRequest
 CLASS org.wildfly.extension.undertow.security.SecurityContextAssociationHandler
 METHOD handleRequest(HttpServerExchange)
-AT LINE 75
+AT INVOKE io.undertow.server.HttpHandler.handleRequest(HttpServerExchange) 1
 BIND scString = $sc == null ? "null" : "Security domain = " + $sc.getSecurityDomain() + ", Subject info: " + $sc.getSubjectInfo() + 
 				", context map = " + $sc.getData() + ", incomingRunAs = " + $sc.getIncomingRunAs() + ", outgoingRunAs = " + $sc.getOutgoingRunAs();
 IF true
-DO log($CLASS, "DEBUG", "Method handleRequest, trying to set RunAsIdentity: \n RunAsIdentity = " + $runAsIdentity
+DO log($CLASS, "DEBUG", "(Method handleRequest) Trying to set RunAsIdentity: \n RunAsIdentity = " + $runAsIdentity
 		+ "; \n SecurityContext: " + scString)
 ENDRULE
 
 RULE logPredicateHandler.handleRequest
 CLASS io.undertow.server.handlers.PredicateHandler
 METHOD handleRequest(HttpServerExchange)
-AT LINE 43
+AT INVOKE io.undertow.server.HttpHandler.handleRequest(HttpServerExchange) 1
 IF true
-DO log($CLASS, "DEBUG", "Method handleRequest, resolving predicates for request in HttpServerExchange. \n TrueHandler = " + $0.trueHandler
+DO log($CLASS, "DEBUG", "(Method handleRequest) Resolving predicates for request in HttpServerExchange. \n TrueHandler = " + $0.trueHandler
 		+ " \n FalseHandler = " + $0.falseHandler + " \n Resulted handler: " + $next)
 ENDRULE
 
 RULE logSSLInformationAssociationHandler.handleRequest.addSSLAttributes
 CLASS io.undertow.servlet.handlers.security.SSLInformationAssociationHandler
 METHOD handleRequest(HttpServerExchange)
-AT LINE 122
+AFTER INVOKE javax.servlet.ServletRequest.setAttribute(String, Object) 3
 IF true
-DO log($CLASS, "DEBUG", "Method handleRequest, adding SSL attributes to request: \n" 
+DO log($CLASS, "DEBUG", "(Method handleRequest) Adding SSL attributes to request: \n" 
 		+ "javax.servlet.request.cipher_suite = " + $request.getAttribute("javax.servlet.request.cipher_suite")
 		+ "javax.servlet.request.key_size = " + $request.getAttribute("javax.servlet.request.key_size")
 		+ "javax.servlet.request.ssl_session_id = " + $request.getAttribute("javax.servlet.request.ssl_session_id")
@@ -70,9 +71,9 @@ ENDRULE
 RULE logSSLInformationAssociationHandler.handleRequest.addCertificatesAttribute
 CLASS io.undertow.servlet.handlers.security.SSLInformationAssociationHandler
 METHOD handleRequest(HttpServerExchange)
-AT LINE 127
+AFTER INVOKE javax.servlet.ServletRequest.setAttribute(String, Object) 4
 IF true
-DO log($CLASS, "DEBUG", "Method handleRequest, adding X509 certificates to request: \n" 
+DO log($CLASS, "DEBUG", "(Method handleRequest) Adding X509 certificates to request: \n" 
 		+ "javax.servlet.request.X509Certificate = " + $certs
 		)
 ENDRULE
@@ -80,9 +81,9 @@ ENDRULE
 RULE logSSLInformationAssociationHandler.handleRequest.NoSSL
 CLASS io.undertow.servlet.handlers.security.SSLInformationAssociationHandler
 METHOD handleRequest(HttpServerExchange)
-AT LINE 131
+AT INVOKE io.undertow.server.HttpHandler.handleRequest(HttpServerExchange) 1
 IF $ssl == null
-DO log($CLASS, "DEBUG", "Method handleRequest, SSLSessionInfo is null, SSL attributes and X509 certificates are not added to request.")
+DO log($CLASS, "DEBUG", "(Method handleRequest) SSLSessionInfo is null, SSL attributes and X509 certificates are not added to request.")
 ENDRULE
 
 RULE logServletAuthenticationCallHandler.handleRequest.next
@@ -90,7 +91,7 @@ CLASS io.undertow.servlet.handlers.security.ServletAuthenticationCallHandler
 METHOD handleRequest(HttpServerExchange)
 AT INVOKE io.undertow.server.HttpHandler.handleRequest(HttpServerExchange) 1
 IF true
-DO log($CLASS, "DEBUG", "Method handleRequest, request is successfully authenticated and exchange is not completed, continuing in handlers chain.")
+DO log($CLASS, "DEBUG", "(Method handleRequest) Request is successfully authenticated and exchange is not completed, continuing in handlers chain.")
 ENDRULE
 
 RULE logServletAuthenticationCallHandler.handleRequest.dispatch
@@ -98,7 +99,7 @@ CLASS io.undertow.servlet.handlers.security.ServletAuthenticationCallHandler
 METHOD handleRequest(HttpServerExchange)
 AT INVOKE io.undertow.server.HttpServerExchange.dispatch(HttpHandler) 1
 IF true
-DO log($CLASS, "DEBUG", "Method handleRequest, request is running in the IO thread, dispatching request to the given executor.")
+DO log($CLASS, "DEBUG", "(Method handleRequest) Request is running in the IO thread, dispatching request to the given executor.")
 ENDRULE
 
 RULE logServletAuthenticationCallHandler.handleRequest.sendError
@@ -106,8 +107,42 @@ CLASS io.undertow.servlet.handlers.security.ServletAuthenticationCallHandler
 METHOD handleRequest(HttpServerExchange)
 AT INVOKE io.undertow.servlet.spec.HttpServletResponseImpl.sendError(int) 1
 IF true
-DO log($CLASS, "DEBUG", "Method handleRequest, response code >= 400 and exchange is not completed, " + 
+DO log($CLASS, "DEBUG", "(Method handleRequest) Response code >= 400 and exchange is not completed, " + 
 						"sending an error response to the client using the specified status code and clearing the buffer.")
+ENDRULE
+
+RULE logAbstractConfidentialityHandler.handleRequest.next
+CLASS io.undertow.security.handlers.AbstractConfidentialityHandler
+METHOD handleRequest(HttpServerExchange)
+AT INVOKE io.undertow.server.HttpHandler.handleRequest(HttpServerExchange) 1
+IF true
+DO log($CLASS, "DEBUG", "(Method handleRequest) Request is already 'sufficiently' confidential, continuing in handlers chain.")
+ENDRULE
+
+RULE logAbstractConfidentialityHandler.handleRequest.endExchange
+CLASS io.undertow.security.handlers.AbstractConfidentialityHandler
+METHOD handleRequest(HttpServerExchange)
+AT INVOKE io.undertow.server.HttpServerExchange.endExchange() 1
+IF true
+DO log($CLASS, "DEBUG", "(Method handleRequest) Request is not 'sufficiently' confidential, ending exchange with code: " + $1.getResponseCode())
+ENDRULE
+
+RULE logServletConfidentialityConstraintHandler.handleRequest.next
+CLASS io.undertow.servlet.handlers.security.ServletConfidentialityConstraintHandler
+METHOD handleRequest(HttpServerExchange)
+AT INVOKE handleRequest(HttpServerExchange) 1
+IF true
+DO log($CLASS, "DEBUG", "(Method handleRequest) TransportGuaranteeType was determined as: " + 
+		$transportGuarantee + ", continuing in handlers chain by calling super.handleRequest(HttpServerExchange exchange).")
+ENDRULE
+
+RULE logServletConfidentialityConstraintHandler.handleRequest.sendError
+CLASS io.undertow.servlet.handlers.security.ServletConfidentialityConstraintHandler
+METHOD handleRequest(HttpServerExchange)
+AT INVOKE javax.servlet.http.HttpServletResponse.sendError(int) 1
+IF true
+DO log($CLASS, "DEBUG", "(Method handleRequest) TransportGuaranteeType is REJECTED, " + 
+		"sending an error response to the client with status SC_FORBIDDEN(403)")
 ENDRULE
 
 #Logging info about JSP config
