@@ -145,6 +145,38 @@ DO log($CLASS, "DEBUG", "(Method handleRequest) TransportGuaranteeType is REJECT
 		"sending an error response to the client with status SC_FORBIDDEN(403)")
 ENDRULE
 
+RULE logAuthenticationMechanismsHandler.handleRequest.addMechanism
+CLASS io.undertow.security.handlers.AuthenticationMechanismsHandler
+METHOD handleRequest(HttpServerExchange)
+AT INVOKE io.undertow.security.api.SecurityContext.addAuthenticationMechanism(AuthenticationMechanism) ALL
+IF true
+DO log($CLASS, "DEBUG", "(Method handleRequest) Adding authentication mechanism [" + $mechanism + "] to the security context.")
+ENDRULE
+
+RULE logAuthenticationMechanismsHandler.handleRequest.next
+CLASS io.undertow.security.handlers.AuthenticationMechanismsHandler
+METHOD handleRequest(HttpServerExchange)
+AT INVOKE handleRequest(HttpServerExchange) 1
+IF true
+DO log($CLASS, "DEBUG", "(Method handleRequest) Added authentication mechanisms if any existed, continuing in handlers chain.")
+ENDRULE
+
+RULE logCachedAuthenticatedSessionHandler.handleRequest.setAuthenticatedSessionManager
+CLASS io.undertow.servlet.handlers.security.CachedAuthenticatedSessionHandler
+METHOD handleRequest(HttpServerExchange)
+AT INVOKE handleRequest(HttpServerExchange) 1
+IF $session != null
+DO log($CLASS, "DEBUG", "(Method handleRequest) HttpSession exists, putting AuthenticatedSessionManager to the exchange and continuing in handlers chain.")
+ENDRULE
+
+RULE logCachedAuthenticatedSessionHandler.handleRequest.next
+CLASS io.undertow.servlet.handlers.security.CachedAuthenticatedSessionHandler
+METHOD handleRequest(HttpServerExchange)
+AT INVOKE handleRequest(HttpServerExchange) 1
+IF $session == null
+DO log($CLASS, "DEBUG", "(Method handleRequest) AuthenticatedSessionManager was not set because HttpSession does not exist, continuing in handlers chain.")
+ENDRULE
+
 #Logging info about JSP config
 RULE logJSPConfig
 CLASS org.wildfly.extension.undertow.JSPConfig
