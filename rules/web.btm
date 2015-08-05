@@ -177,6 +177,24 @@ IF $session == null
 DO log($CLASS, "DEBUG", "(Method handleRequest) AuthenticatedSessionManager was not set because HttpSession does not exist, continuing in handlers chain.")
 ENDRULE
 
+RULE logSecurityInitialHandler.handleRequest.next
+CLASS io.undertow.security.handlers.SecurityInitialHandler
+METHOD handleRequest(HttpServerExchange)
+AT INVOKE handleRequest(HttpServerExchange) 1
+IF true
+DO log($CLASS, "DEBUG", "(Method handleRequest) Creating security context:\n Authentication mode: " + $0.authenticationMode +
+		", Identity manager: " + $0.identityManager + ", ProgramaticMechName: " + $0.programaticMechName)
+ENDRULE
+
+RULE logJACCContextIdHandler.handleRequest.next
+CLASS org.wildfly.extension.undertow.security.jacc.JACCContextIdHandler
+METHOD handleRequest(HttpServerExchange)
+AT INVOKE handleRequest(HttpServerExchange) 1
+IF true
+DO log($CLASS, "DEBUG", "(Method handleRequest) Checking previously registered contextId and suspending it" +
+		" for the duration of the request. Previous contextId = " + $previousContextID)
+ENDRULE
+
 #Logging info about JSP config
 RULE logJSPConfig
 CLASS org.wildfly.extension.undertow.JSPConfig
