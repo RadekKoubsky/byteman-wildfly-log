@@ -195,6 +195,30 @@ DO log($CLASS, "DEBUG", "(Method handleRequest) Checking previously registered c
 		" for the duration of the request. Previous contextId = " + $previousContextID)
 ENDRULE
 
+RULE logServletInitialHandler.handleFirstRequest.setup
+CLASS io.undertow.servlet.handlers.ServletInitialHandler
+METHOD handleFirstRequest(HttpServerExchange, ServletChain, ServletRequestContext, ServletRequest, ServletResponse)
+AT INVOKE io.undertow.servlet.core.CompositeThreadSetupAction.setup(HttpServerExchange) 1
+IF true
+DO log($CLASS, "DEBUG", "(Method handleFirstRequest) Setting up thread local context for the exchange.")
+ENDRULE
+
+RULE logServletInitialHandler.handleFirstRequest.setCurrentRequestContext
+CLASS io.undertow.servlet.handlers.ServletInitialHandler
+METHOD handleFirstRequest(HttpServerExchange, ServletChain, ServletRequestContext, ServletRequest, ServletResponse)
+AT INVOKE io.undertow.servlet.handlers.SecurityActions.setCurrentRequestContext(ServletRequestContext) 1
+IF true
+DO log($CLASS, "DEBUG", "(Method handleFirstRequest) Storing current request context in the current thread's copy of the thread-local variable.")
+ENDRULE
+
+RULE logServletInitialHandler.handleFirstRequest.next
+CLASS io.undertow.servlet.handlers.ServletInitialHandler
+METHOD handleFirstRequest(HttpServerExchange, ServletChain, ServletRequestContext, ServletRequest, ServletResponse)
+AT INVOKE handleRequest(HttpServerExchange) 1
+IF true
+DO log($CLASS, "DEBUG", "(Method handleFirstRequest) First request has been successfully initialized, continuing in handlers chain.")
+ENDRULE
+
 #Logging info about JSP config
 RULE logJSPConfig
 CLASS org.wildfly.extension.undertow.JSPConfig
