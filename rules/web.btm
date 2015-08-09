@@ -219,6 +219,22 @@ IF true
 DO log($CLASS, "DEBUG", "(Method handleFirstRequest) First request has been successfully initialized, continuing in handlers chain.")
 ENDRULE
 
+RULE logServletInitialHandler.dispatchRequest.handleFirstRequest
+CLASS io.undertow.servlet.handlers.ServletInitialHandler
+METHOD dispatchRequest(HttpServerExchange, ServletRequestContext, ServletChain, DispatcherType)
+AT INVOKE handleFirstRequest(HttpServerExchange, ServletChain, ServletRequestContext, ServletRequest, ServletResponse) 1
+IF true
+DO log($CLASS, "DEBUG", "(Method dispatchRequest) DispatcherType is REQUEST or ASYNC, handling request as the first request.")
+ENDRULE
+
+RULE logServletInitialHandler.dispatchRequest.next
+CLASS io.undertow.servlet.handlers.ServletInitialHandler
+METHOD dispatchRequest(HttpServerExchange, ServletRequestContext, ServletChain, DispatcherType)
+AT INVOKE handleRequest(HttpServerExchange) 1
+IF true
+DO log($CLASS, "DEBUG", "(Method dispatchRequest) DispatcherType is not REQUEST or ASYNC, continuing in handlers chain.")
+ENDRULE
+
 #Logging info about JSP config
 RULE logJSPConfig
 CLASS org.wildfly.extension.undertow.JSPConfig
