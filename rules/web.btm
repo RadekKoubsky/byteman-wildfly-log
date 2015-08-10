@@ -235,6 +235,57 @@ IF true
 DO log($CLASS, "DEBUG", "(Method dispatchRequest) DispatcherType is not REQUEST or ASYNC, continuing in handlers chain.")
 ENDRULE
 
+RULE logServletInitialHandler.handleRequest.forbiddenPath
+CLASS io.undertow.servlet.handlers.ServletInitialHandler
+METHOD handleRequest(HttpServerExchange)
+AT INVOKE io.undertow.server.HttpServerExchange.setResponseCode(int) 1
+IF true
+DO log($CLASS, "DEBUG", "(Method handleRequest) Path: " + $path + " is forbidden, setting response code to 404 NOT_FOUND.")
+ENDRULE
+
+RULE logServletInitialHandler.handleRequest.redirect
+CLASS io.undertow.servlet.handlers.ServletInitialHandler
+METHOD handleRequest(HttpServerExchange)
+AT INVOKE io.undertow.server.HttpServerExchange.setResponseCode(int) 2
+IF true
+DO log($CLASS, "DEBUG", "(Method handleRequest) Type is ServletPathMatch.Type.REDIRECT, the request is an upgrade request and it " + 
+						"is not HTTP2 upgrade requests. Setting response code to 302 FOUND.")
+ENDRULE
+
+RULE logServletInitialHandler.handleRequest.rewrite
+CLASS io.undertow.servlet.handlers.ServletInitialHandler
+METHOD handleRequest(HttpServerExchange)
+AT INVOKE io.undertow.server.HttpServerExchange.setRelativePath(String) 1
+IF true
+DO log($CLASS, "DEBUG", "(Method handleRequest) The path ends with a '/', type is ServletPathMatch.Type.REWRITE." + 
+						" Adding rewrite location to relative path, request URI and request path of the exchange.")
+ENDRULE
+
+RULE logServletInitialHandler.handleRequest
+CLASS io.undertow.servlet.handlers.ServletInitialHandler
+METHOD handleRequest(HttpServerExchange)
+AT ENTRY
+IF true
+DO log($CLASS, "DEBUG", "(Method handleRequest) Handling request by InitialServletHandler.handleRequest: Checking exchange and its executor and security manager.")
+ENDRULE
+
+RULE logConnectors.executeRootHandler.handleRequest
+CLASS io.undertow.server.Connectors
+METHOD executeRootHandler(HttpHandler, HttpServerExchange)
+AT ENTRY
+IF true
+DO log($CLASS, "DEBUG", "(Method executeRootHandler) Executing root handler:" + $1)
+ENDRULE
+
+RULE logHttpServerExchange.dispatch
+CLASS io.undertow.server.HttpServerExchange
+METHOD dispatch(Executor, HttpHandler)
+AT ENTRY
+IF true
+DO log($CLASS, "DEBUG", "(Method dispatch) Dispatching HttpServerExchange with following executor and handler: \n" + 
+						"Executor = " + $1 + "; Handler = " + $2)
+ENDRULE
+
 #Logging info about JSP config
 RULE logJSPConfig
 CLASS org.wildfly.extension.undertow.JSPConfig
