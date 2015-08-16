@@ -1,6 +1,6 @@
 HELPER org.jboss.byteman.koubsky.LogHelper
 
-#Logging undertow handlers chain
+#Logging of undertow handlers chain
 RULE logServletHandler.handleRequest
 CLASS io.undertow.servlet.handlers.ServletHandler
 METHOD handleRequest(HttpServerExchange)

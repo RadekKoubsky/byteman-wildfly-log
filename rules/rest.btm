@@ -1,6 +1,6 @@
 HELPER org.jboss.byteman.koubsky.LogHelper
 
-#Log invoking resoure method
+#Log invoking resource method
 RULE logMethodInjectorImpl.invoke.invoke
 CLASS org.jboss.resteasy.core.MethodInjectorImpl
 METHOD invoke(HttpRequest, HttpResponse, Object)
@@ -19,13 +19,152 @@ IF true
 DO log($CLASS, "DEBUG", "(Method injectArguments) Injected value: " + $extractor.inject($input, $response))
 ENDRULE
 
+#Log validating all parameters
+RULE logMethodInjectorImpl.invoke.validateAllParams
+CLASS org.jboss.resteasy.core.MethodInjectorImpl
+METHOD invoke(HttpRequest, HttpResponse, Object)
+AT INVOKE org.jboss.resteasy.spi.validation.GeneralValidator.validateAllParameters
+IF true
+DO log($CLASS, "DEBUG", "(Method invoke) Start validating all parameters of resource method, params: " + java.util.Arrays.toString($args))
+ENDRULE
+
+#Log validation of all parameters ok
+RULE logMethodInjectorImpl.invoke.validateAllParamsOK
+CLASS org.jboss.resteasy.core.MethodInjectorImpl
+METHOD invoke(HttpRequest, HttpResponse, Object)
+AFTER INVOKE org.jboss.resteasy.spi.validation.GeneralValidator.validateAllParameters
+IF true
+DO log($CLASS, "DEBUG", "(Method invoke) Validation of all parameters OK.")
+ENDRULE
+
+#Log validating return value
+RULE logMethodInjectorImpl.invoke.validateReturnValue
+CLASS org.jboss.resteasy.core.MethodInjectorImpl
+METHOD invoke(HttpRequest, HttpResponse, Object)
+AT INVOKE org.jboss.resteasy.spi.validation.GeneralValidator.validateReturnValue
+IF true
+DO log($CLASS, "DEBUG", "(Method invoke) Start validating return value of resource method, value: " + $result)
+ENDRULE
+
+#Log validation of return value ok
+RULE logMethodInjectorImpl.invoke.validateReturnValueOK
+CLASS org.jboss.resteasy.core.MethodInjectorImpl
+METHOD invoke(HttpRequest, HttpResponse, Object)
+AFTER INVOKE org.jboss.resteasy.spi.validation.GeneralValidator.validateReturnValue
+IF true
+DO log($CLASS, "DEBUG", "(Method invoke) Validation of return value OK.")
+ENDRULE
+
+#Log creating resource
+RULE logResourceMethodInvoker.invoke.createResource
+CLASS org.jboss.resteasy.core.ResourceMethodInvoker
+METHOD invoke(HttpRequest, HttpResponse)
+AFTER WRITE $target
+IF true
+DO log($CLASS, "DEBUG", "(Method invoke(HttpRequest, HttpResponse)) Created resource " + $target)
+ENDRULE
+
 #Log uri info
-RULE logResourceMethodInvoker.invoke
+RULE logResourceMethodInvoker.invoke.uriInfo
 CLASS org.jboss.resteasy.core.ResourceMethodInvoker
 METHOD invoke(HttpRequest, HttpResponse, Object)
 AFTER WRITE $uriInfo
 IF true
-DO log($CLASS, "DEBUG", "(Method invoke) Uri info: \nAbsolute path = " + $uriInfo.absolutePath + 
-		", query string = " + $uriInfo.queryString + ", query parameters = " + $uriInfo.queryParameters + 
+DO log($CLASS, "DEBUG", "(Method invoke(HttpRequest, HttpResponse, Object)) Created Uri info: \nAbsolute path = " 
+		+ $uriInfo.absolutePath + ", query string = " + $uriInfo.queryString + ", query parameters = " + $uriInfo.queryParameters + 
 		", path parameters = " + $uriInfo.pathParameters)
 ENDRULE
+
+#Log push current resource
+RULE logResourceMethodInvoker.invoke.pushCurrentResource
+CLASS org.jboss.resteasy.core.ResourceMethodInvoker
+METHOD invoke(HttpRequest, HttpResponse, Object)
+AFTER INVOKE org.jboss.resteasy.spi.ResteasyUriInfo.pushCurrentResource(Object)
+IF true
+DO log($CLASS, "DEBUG", "(Method invoke(HttpRequest, HttpResponse, Object)) Current resource:" + 
+						$target + " pushed into uri info.")
+ENDRULE
+
+#Log validator is null
+RULE logResourceMethodInvoker.invokeOnTarget.NullValidator
+CLASS org.jboss.resteasy.core.ResourceMethodInvoker
+METHOD invokeOnTarget(HttpRequest, HttpResponse, Object)
+AT ENTRY
+IF $0.validator == null
+DO log($CLASS, "DEBUG", "(Method invokeOnTarget) Validator is null, no validations are performed.")
+ENDRULE
+
+#Log validator is not null
+RULE logResourceMethodInvoker.invokeOnTarget.NotNullValidator
+CLASS org.jboss.resteasy.core.ResourceMethodInvoker
+METHOD invokeOnTarget(HttpRequest, HttpResponse, Object)
+AT ENTRY
+IF $0.validator != null
+DO log($CLASS, "DEBUG", "(Method invokeOnTarget) Validator is not null, validator: " + $0.validator)
+ENDRULE
+
+#Log filtering for each filter
+RULE logResourceMethodInvoker.invokeOnTarget.filter
+CLASS org.jboss.resteasy.core.ResourceMethodInvoker
+METHOD invokeOnTarget(HttpRequest, HttpResponse, Object)
+AT INVOKE javax.ws.rs.container.ContainerRequestFilter.filter(ContainerRequestContext)
+IF true
+DO log($CLASS, "DEBUG", "(Method invokeOnTarget) Filtering request context by filter:" + $filter)
+ENDRULE
+
+#Log validating resource
+RULE logResourceMethodInvoker.invokeOnTarget.validate
+CLASS org.jboss.resteasy.core.ResourceMethodInvoker
+METHOD invokeOnTarget(HttpRequest, HttpResponse, Object)
+AT INVOKE validate
+IF true
+DO log($CLASS, "DEBUG", "(Method invokeOnTarget) Validatable = true, Validating resource by following validator:" + $0.validator)
+ENDRULE
+
+#Log adding validator to request
+RULE logResourceMethodInvoker.invokeOnTarget.addValidator
+CLASS org.jboss.resteasy.core.ResourceMethodInvoker
+METHOD invokeOnTarget(HttpRequest, HttpResponse, Object)
+AT INVOKE org.jboss.resteasy.spi.HttpRequest.setAttribute(String, Object)
+IF true
+DO log($CLASS, "DEBUG", "(Method invokeOnTarget) Method is validatable, adding validator:" + $0.validator +
+						" to request.")
+ENDRULE
+
+#Log checking violations
+RULE logResourceMethodInvoker.invokeOnTarget.checkConstraints
+CLASS org.jboss.resteasy.core.ResourceMethodInvoker
+METHOD invokeOnTarget(HttpRequest, HttpResponse, Object)
+AT INVOKE org.jboss.resteasy.spi.validation.GeneralValidator.checkViolations(HttpRequest)
+IF true
+DO log($CLASS, "DEBUG", "(Method invokeOnTarget) Method is not validatable, but validatable = true, " + 
+						"checking violations.")
+ENDRULE
+
+#Log calling invoke of method injector
+RULE logResourceMethodInvoker.invokeOnTarget.invoke
+CLASS org.jboss.resteasy.core.ResourceMethodInvoker
+METHOD invokeOnTarget(HttpRequest, HttpResponse, Object)
+AT INVOKE org.jboss.resteasy.spi.MethodInjector.invoke(HttpRequest, HttpResponse, Object)
+IF true
+DO log($CLASS, "DEBUG", "(Method invokeOnTarget) Invoking resource method on resource: " + $target)
+ENDRULE
+
+#Log no content
+RULE logResourceMethodInvoker.invokeOnTarget.noContent
+CLASS org.jboss.resteasy.core.ResourceMethodInvoker
+METHOD invokeOnTarget(HttpRequest, HttpResponse, Object)
+AT INVOKE javax.ws.rs.core.Response.noContent()
+IF true
+DO log($CLASS, "DEBUG", "(Method invokeOnTarget) Return type of the method is void or returned value is null, " + 
+						"building response with no content.")
+ENDRULE
+
+#Log creation of new BuildResponse. Not used yet, location specifier does not work properly.
+#RULE logResourceMethodInvoker.invokeOnTarget.newBuildResponse
+#CLASS org.jboss.resteasy.core.ResourceMethodInvoker
+#METHOD invokeOnTarget(HttpRequest, HttpResponse, Object)
+#AT INVOKE org.jboss.resteasy.specimpl.BuiltResponse.BuiltResponse<init>
+#IF true
+#DO log($CLASS, "DEBUG", "(Method invokeOnTarget) Response is not instanceof BuiltResponse, creating new BuiltResponse from current response.")
+#ENDRULE
