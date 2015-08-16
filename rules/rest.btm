@@ -1,0 +1,31 @@
+HELPER org.jboss.byteman.koubsky.LogHelper
+
+#Log invoking resoure method
+RULE logMethodInjectorImpl.invoke.invoke
+CLASS org.jboss.resteasy.core.MethodInjectorImpl
+METHOD invoke(HttpRequest, HttpResponse, Object)
+AT INVOKE java.lang.reflect.Method.invoke(Object, Object[]) 1
+IF true
+DO log($CLASS, "DEBUG", "(Method invoke) Invoking method: " + $invokedMethod + ". Parameters values: " + java.util.Arrays.toString($args)
+							+ "\nFullpath of the invoked method: " + $0.method.fullpath)
+ENDRULE
+
+#Log injecting resource method parameters
+RULE logMethodInjectorImpl.invoke.injectParams
+CLASS org.jboss.resteasy.core.MethodInjectorImpl
+METHOD injectArguments(HttpRequest, HttpResponse)
+AFTER INVOKE org.jboss.resteasy.core.ValueInjector.inject(HttpRequest, HttpResponse)
+IF true
+DO log($CLASS, "DEBUG", "(Method injectArguments) Injected value: " + $extractor.inject($input, $response))
+ENDRULE
+
+#Log uri info
+RULE logResourceMethodInvoker.invoke
+CLASS org.jboss.resteasy.core.ResourceMethodInvoker
+METHOD invoke(HttpRequest, HttpResponse, Object)
+AFTER WRITE $uriInfo
+IF true
+DO log($CLASS, "DEBUG", "(Method invoke) Uri info: \nAbsolute path = " + $uriInfo.absolutePath + 
+		", query string = " + $uriInfo.queryString + ", query parameters = " + $uriInfo.queryParameters + 
+		", path parameters = " + $uriInfo.pathParameters)
+ENDRULE
