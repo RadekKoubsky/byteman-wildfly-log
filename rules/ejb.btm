@@ -1,0 +1,31 @@
+HELPER org.jboss.byteman.koubsky.LogHelper
+
+#Log setting current interceptors
+RULE logWeavedInterceptor.setCurrentInterceptors
+CLASS org.jboss.invocation.WeavedInterceptor
+METHOD processInvocation(InterceptorContext)
+AT INVOKE org.jboss.invocation.InterceptorContext.setInterceptors(List)
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Setting current interceptors to the context:\nOld interceptors: " + $old +
+						"\n\nCurrent interceptors: " + $interceptors)
+ENDRULE
+
+#Log passing invocation through the context
+RULE logInterceptorContext.proceed
+CLASS org.jboss.invocation.InterceptorContext
+METHOD proceed()
+AT ENTRY
+IF true
+DO log($CLASS, "DEBUG", "(Method proceed) Passing the invocation on to the next step in the chain through the context: " + $0)
+ENDRULE
+
+#Log method invocation by interceptor
+RULE logManagedReferenceMethodInterceptor.invoke
+CLASS org.jboss.as.ee.component.ManagedReferenceMethodInterceptor
+METHOD processInvocation(InterceptorContext)
+AT INVOKE java.lang.reflect.Method.invoke(Object, Object[])
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Invoking intercepted method of an EJB instance.\nInterceptor: " + $0 
+						+ "\nInstance: " + $instance + "\nMethod: " + $0.method + "\nParameters values: " 
+						+ java.util.Arrays.toString($context.getParameters()))
+ENDRULE

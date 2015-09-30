@@ -114,10 +114,10 @@ ENDRULE
 RULE logServletContainerDispatcher.service.pop
 CLASS org.jboss.resteasy.plugins.server.servlet.ServletContainerDispatcher
 METHOD service(String, HttpServletRequest, HttpServletResponse, boolean)
-AT INVOKE org.jboss.resteasy.core.ThreadLocalResteasyProviderFactory.pop()
+AT INVOKE org.jboss.resteasy.core.ThreadLocalResteasyProviderFactory.pop() ALL
 IF true
 DO log($CLASS, "DEBUG", "(Method service) Default instance of ResteasyProviderFactory is instance of " +
-						"ThreadLocalResteasyProviderFactory, popping provider factory.")
+						"ThreadLocalResteasyProviderFactory, popping provider factory from stack.")
 ENDRULE
 
 #Log getting invoker
