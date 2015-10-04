@@ -1,7 +1,151 @@
 HELPER org.jboss.byteman.koubsky.LogHelper
 
+#Log process invocation
+RULE logJsr299BindingsInterceptor.processInvocation
+CLASS org.jboss.as.weld.ejb.Jsr299BindingsInterceptor
+METHOD processInvocation(InterceptorContext)
+AT LINE 91
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Processing invocation, getting interceptor instances and bindings:\n" + 
+						"InterceptorContext: " + $context + "\ninterceptionType: " + $0.interceptionType + 
+						"\ninterceptorInstances: " + ($interceptorInstances == null ? "null" : $interceptorInstances.interceptorInstances) +
+						"\n" + "interceptorBindings - all interceptors: " + ($interceptorBindings == null ? "null" : $interceptorBindings.getAllInterceptors()))
+ENDRULE
+
+#Log method interception
+RULE logJsr299BindingsInterceptor.doMethodInterception
+CLASS org.jboss.as.weld.ejb.Jsr299BindingsInterceptor
+METHOD doMethodInterception(InvocationContext, InterceptionType, WeldInterceptorInstances, InterceptorBindings)
+AT ENTRY
+IF true
+DO log($CLASS, "DEBUG", "(Method doMethodInterception) Intercepting method with following parameters:\n" + 
+						"invocationContext: " + $invocationContext + "\ninterceptionType: " + $interceptionType +
+						"\n" + "interceptorBindings: " + $interceptorBindings)
+ENDRULE
+
+#Log proceeding of method interception
+RULE logJsr299BindingsInterceptor.doMethodInterception.proceed
+CLASS org.jboss.as.weld.ejb.Jsr299BindingsInterceptor
+METHOD doMethodInterception(InvocationContext, InterceptionType, WeldInterceptorInstances, InterceptorBindings)
+AT INVOKE javax.interceptor.InvocationContext.proceed()
+IF true
+DO log($CLASS, "DEBUG", "(Method doMethodInterception) Interceptor bindings == null, proceeding with the next stage of invocation processing.")
+ENDRULE
+
+#Log delegating of method interception
+RULE logJsr299BindingsInterceptor.doMethodInterception.delegateInterseption
+CLASS org.jboss.as.weld.ejb.Jsr299BindingsInterceptor
+METHOD doMethodInterception(InvocationContext, InterceptionType, WeldInterceptorInstances, InterceptorBindings)
+AT INVOKE org.jboss.as.weld.ejb.Jsr299BindingsInterceptor.delegateInterception(InvocationContext, InterceptionType, List, WeldInterceptorInstances)
+IF true
+DO log($CLASS, "DEBUG", "(Method doMethodInterception) Interceptor bindings != null, delegating interception for current method interceptors: " + $currentInterceptors)
+ENDRULE
+
+#Log getting current interceptor instances
+RULE logJsr299BindingsInterceptor.delegateInterseption.getCurrentInstances
+CLASS org.jboss.as.weld.ejb.Jsr299BindingsInterceptor
+METHOD delegateInterception(InvocationContext, InterceptionType, List, WeldInterceptorInstances)
+AT ENTRY
+IF true
+DO log($CLASS, "DEBUG", "(Method delegateInterception) Trying to get current interceptor instances.")
+ENDRULE
+
+#Log proceeding by DelegatingInterceptorInvocationContext
+RULE logJsr299BindingsInterceptor.delegateInterseption.proceedDelegatingInterceptorInvocationContext
+CLASS org.jboss.as.weld.ejb.Jsr299BindingsInterceptor
+METHOD delegateInterception(InvocationContext, InterceptionType, List, WeldInterceptorInstances)
+AT INVOKE org.jboss.as.weld.ejb.DelegatingInterceptorInvocationContext.<init>
+IF true
+DO log($CLASS, "DEBUG", "(Method delegateInterception) Current interceptor instances exist: "+ $currentInterceptorInstances + 
+						", creating DelegatingInterceptorInvocationContext and " +
+						"proceeding with the next stage of invocation processing.")
+ENDRULE
+
+#Log proceeding by InvocationContext
+RULE logJsr299BindingsInterceptor.delegateInterseption.proceedInvocationContext
+CLASS org.jboss.as.weld.ejb.Jsr299BindingsInterceptor
+METHOD delegateInterception(InvocationContext, InterceptionType, List, WeldInterceptorInstances)
+AT INVOKE javax.interceptor.InvocationContext.proceed()
+IF true
+DO log($CLASS, "DEBUG", "(Method delegateInterception) Current interceptor instances do not exist, using InvocationContext" +
+						" to proceed with the next stage of invocation processing.")
+ENDRULE
+
+#Log lifecycle interception
+RULE logJsr299BindingsInterceptor.doLifecycleInterception
+CLASS org.jboss.as.weld.ejb.Jsr299BindingsInterceptor
+METHOD doLifecycleInterception(InterceptorContext, WeldInterceptorInstances, InterceptorBindings)
+AT ENTRY
+IF true
+DO log($CLASS, "DEBUG", "(Method doLifecycleInterception) Lifecycle interception with following parameters:\n" + 
+						"InterceptorContext: " + $context + "\n" + "interceptorBindings: " + $interceptorBindings)
+ENDRULE
+
+#Log proceeding of method interception
+RULE logJsr299BindingsInterceptor.doLifecycleInterception.proceed
+CLASS org.jboss.as.weld.ejb.Jsr299BindingsInterceptor
+METHOD doLifecycleInterception(InvocationContext, InterceptionType, WeldInterceptorInstances, InterceptorBindings)
+AT INVOKE javax.interceptor.InvocationContext.proceed()
+IF true
+DO log($CLASS, "DEBUG", "(Method doLifecycleInterception) Interceptor bindings == null, proceeding with the next stage of invocation processing.")
+ENDRULE
+
+#Log delegating of method interception
+RULE logJsr299BindingsInterceptor.doLifecycleInterception.delegateInterseption
+CLASS org.jboss.as.weld.ejb.Jsr299BindingsInterceptor
+METHOD doLifecycleInterception(InvocationContext, InterceptionType, WeldInterceptorInstances, InterceptorBindings)
+AT INVOKE org.jboss.as.weld.ejb.Jsr299BindingsInterceptor.delegateInterception(InvocationContext, InterceptionType, List, WeldInterceptorInstances)
+IF true
+DO log($CLASS, "DEBUG", "(Method doLifecycleInterception) Interceptor bindings != null, delegating interception for current lifecycle interceptors: " + $currentInterceptors)
+ENDRULE
+
+#Log beginning of interceptor creation process
+RULE logUserInterceptorFactory.create
+CLASS org.jboss.as.ee.component.interceptors.UserInterceptorFactory
+METHOD create(InterceptorFactoryContext)
+AT ENTRY
+IF true
+DO log($CLASS, "DEBUG", "(Method create) Begin creation process of a new interceptor...")
+ENDRULE
+
+#Log creating around invoke interceptor
+RULE logUserInterceptorFactory.create.aroundInvoke
+CLASS org.jboss.as.ee.component.interceptors.UserInterceptorFactory
+METHOD create(InterceptorFactoryContext)
+AFTER WRITE $aroundInvoke
+IF true
+DO log($CLASS, "DEBUG", "(Method create) Created around_invoke interceptor: " + $aroundInvoke)
+ENDRULE
+
+#Log creating around timeout interceptor
+RULE logUserInterceptorFactory.create.aroundTimeout
+CLASS org.jboss.as.ee.component.interceptors.UserInterceptorFactory
+METHOD create(InterceptorFactoryContext)
+AFTER WRITE $aroundTimeout
+IF $aroundTimeout == null
+DO log($CLASS, "DEBUG", "(Method create) Around timeout interceptor factory is null, assigning null to around_timeout interceptor.")
+ENDRULE
+
+#Log null around timeout interceptor
+RULE logUserInterceptorFactory.create.nullAroundTimeout
+CLASS org.jboss.as.ee.component.interceptors.UserInterceptorFactory
+METHOD create(InterceptorFactoryContext)
+AFTER WRITE $aroundTimeout
+IF $aroundTimeout != null
+DO log($CLASS, "DEBUG", "(Method create) Created around_timeout interceptor: " + $aroundTimeout)
+ENDRULE
+
+#Log construction of new interceptor
+RULE logUserInterceptorFactory.create.new
+CLASS org.jboss.as.ee.component.interceptors.UserInterceptorFactory
+METHOD create(InterceptorFactoryContext)
+AT EXIT
+IF true
+DO log($CLASS, "DEBUG", "(Method create) Constructing new interceptor instance with around invoke and around timeout invocations.")
+ENDRULE
+
 #Log setting current interceptors
-RULE logWeavedInterceptor.setCurrentInterceptors
+RULE logWeavedInterceptor.processInvocation.setCurrentInterceptors
 CLASS org.jboss.invocation.WeavedInterceptor
 METHOD processInvocation(InterceptorContext)
 AT INVOKE org.jboss.invocation.InterceptorContext.setInterceptors(List)
@@ -11,16 +155,16 @@ DO log($CLASS, "DEBUG", "(Method processInvocation) Setting current interceptors
 ENDRULE
 
 #Log passing invocation through the context
-RULE logInterceptorContext.proceed
-CLASS org.jboss.invocation.InterceptorContext
-METHOD proceed()
-AT ENTRY
+RULE logWeavedInterceptor.processInvocation.proceed
+CLASS org.jboss.invocation.WeavedInterceptor
+METHOD processInvocation(InterceptorContext)
+AT INVOKE org.jboss.invocation.InterceptorContext.proceed()
 IF true
-DO log($CLASS, "DEBUG", "(Method proceed) Passing the invocation on to the next step in the chain through the context: " + $0)
+DO log($CLASS, "DEBUG", "(Method processInvocation) Pass the invocation on to the next step in the chain.")
 ENDRULE
 
 #Log method invocation by interceptor
-RULE logManagedReferenceMethodInterceptor.invoke
+RULE logManagedReferenceMethodInterceptor.processInvocation.invoke
 CLASS org.jboss.as.ee.component.ManagedReferenceMethodInterceptor
 METHOD processInvocation(InterceptorContext)
 AT INVOKE java.lang.reflect.Method.invoke(Object, Object[])
