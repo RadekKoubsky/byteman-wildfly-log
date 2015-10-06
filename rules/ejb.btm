@@ -1,12 +1,15 @@
 HELPER org.jboss.byteman.koubsky.LogHelper
 
+
+#------------ Beginning of rules for method StatefulSessionSynchronizationInterceptor.processInvocation(InterceptorContext) ------------
+
 #Log StatefulSessionSynchronizationInterceptor - start synchronization
 RULE logStatefulSessionSynchronizationInterceptor.processInvocation.startSynchronization
 CLASS org.jboss.as.ejb3.component.stateful.StatefulSessionSynchronizationInterceptor
 METHOD processInvocation(InterceptorContext)
 AFTER WRITE $instance
 IF true
-DO log($CLASS, "DEBUG", "(Method processInvocation) Start synchronization of stateful session bean instance: " + $instance)
+DO log($CLASS, "DEBUG", "(Method processInvocation) Start synchronization of stateful session component instance: " + $instance)
 ENDRULE
 
 #Log StatefulSessionSynchronizationInterceptor - getting lock
@@ -15,7 +18,7 @@ CLASS org.jboss.as.ejb3.component.stateful.StatefulSessionSynchronizationInterce
 METHOD processInvocation(InterceptorContext)
 AFTER WRITE $lock
 IF true
-DO log($CLASS, "DEBUG", "(Method processInvocation) Getting lock from bean instance, lock: " + $lock)
+DO log($CLASS, "DEBUG", "(Method processInvocation) Getting lock from stateful session component instance, lock: " + $lock)
 ENDRULE
 
 #Log StatefulSessionSynchronizationInterceptor - getting threadLock
@@ -24,7 +27,7 @@ CLASS org.jboss.as.ejb3.component.stateful.StatefulSessionSynchronizationInterce
 METHOD processInvocation(InterceptorContext)
 AFTER WRITE $threadLock
 IF true
-DO log($CLASS, "DEBUG", "(Method processInvocation) Getting thread lock from bean instance, thread lock: " + $threadLock)
+DO log($CLASS, "DEBUG", "(Method processInvocation) Getting thread lock from stateful session component instance, thread lock: " + $threadLock)
 ENDRULE
 
 #Log StatefulSessionSynchronizationInterceptor - pushing lock owner
@@ -60,32 +63,104 @@ ENDRULE
 RULE logStatefulSessionSynchronizationInterceptor.processInvocation.syncNotRegistered
 CLASS org.jboss.as.ejb3.component.stateful.StatefulSessionSynchronizationInterceptor
 METHOD processInvocation(InterceptorContext)
-AFTER INVOKE org.jboss.as.ejb3.component.stateful.StatefulSessionComponentInstance.isSynchronizationRegistered()
+AFTER INVOKE org.jboss.as.ejb3.component.stateful.StatefulSessionComponentInstance.isSynchronizationRegistered() 1
 IF !$instance.isSynchronizationRegistered()
 DO log($CLASS, "DEBUG", "(Method processInvocation) Synchronization is not registered, trying to register synchronization for transaction key.")
+ENDRULE
+
+#Log StatefulSessionSynchronizationInterceptor - getting transaction key
+RULE logStatefulSessionSynchronizationInterceptor.processInvocation.getTransactionKey
+CLASS org.jboss.as.ejb3.component.stateful.StatefulSessionSynchronizationInterceptor
+METHOD processInvocation(InterceptorContext)
+AFTER WRITE $currentTransactionKey
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Getting current transaction key, key: " + $currentTransactionKey)
+ENDRULE
+
+#Log StatefulSessionSynchronizationInterceptor - getting status
+RULE logStatefulSessionSynchronizationInterceptor.processInvocation.getStatus
+CLASS org.jboss.as.ejb3.component.stateful.StatefulSessionSynchronizationInterceptor
+METHOD processInvocation(InterceptorContext)
+AFTER WRITE $status
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Getting the transaction status of the current thread, status: " + $status)
+ENDRULE
+
+#Log StatefulSessionSynchronizationInterceptor - after begin callback
+RULE logStatefulSessionSynchronizationInterceptor.processInvocation.afterBegin
+CLASS org.jboss.as.ejb3.component.stateful.StatefulSessionSynchronizationInterceptor
+METHOD processInvocation(InterceptorContext)
+AT INVOKE org.jboss.as.ejb3.component.stateful.StatefulSessionComponentInstance.afterBegin()
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Invoking the afterBegin callback on the stateful session component instance.")
+ENDRULE
+
+#Log StatefulSessionSynchronizationInterceptor - set synchronization registered
+RULE logStatefulSessionSynchronizationInterceptor.processInvocation.setSynchronizationRegistered
+CLASS org.jboss.as.ejb3.component.stateful.StatefulSessionSynchronizationInterceptor
+METHOD processInvocation(InterceptorContext)
+AT INVOKE org.jboss.as.ejb3.component.stateful.StatefulSessionComponentInstance.setSynchronizationRegistered(boolean)
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Setting synchronization registered of the stateful session component instance to value: true")
+ENDRULE
+
+#Log StatefulSessionSynchronizationInterceptor - put private data after sycnhronozation was set
+RULE logStatefulSessionSynchronizationInterceptor.processInvocation.putPrivateData
+CLASS org.jboss.as.ejb3.component.stateful.StatefulSessionSynchronizationInterceptor
+METHOD processInvocation(InterceptorContext)
+AFTER INVOKE org.jboss.invocation.InterceptorContext.putPrivateData(Class, Object) 1
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Synchronization is now registered, putting private data to interceptor context:\n" + 
+						"Type: " + "StatefulTransactionMarker.class" + "\n" + 
+						"Created instance with firstInvocation = true, instance: " + org.jboss.as.ejb3.component.stateful.StatefulTransactionMarker.of(true))
 ENDRULE
 
 #Log StatefulSessionSynchronizationInterceptor - synchronization is registered
 RULE logStatefulSessionSynchronizationInterceptor.processInvocation.syncIsRegistered
 CLASS org.jboss.as.ejb3.component.stateful.StatefulSessionSynchronizationInterceptor
 METHOD processInvocation(InterceptorContext)
-AFTER INVOKE org.jboss.as.ejb3.component.stateful.StatefulSessionComponentInstance.isSynchronizationRegistered()
+AFTER INVOKE org.jboss.as.ejb3.component.stateful.StatefulSessionComponentInstance.isSynchronizationRegistered() 1
 IF $instance.isSynchronizationRegistered()
 DO log($CLASS, "DEBUG", "(Method processInvocation) Synchronization is registered, putting private data to interceptor context:\n" + 
 						"Type: " + "StatefulTransactionMarker.class" + "\n" + 
-						org.jboss.as.ejb3.component.stateful.StatefulTransactionMarker.of(false))
+						"Created instance with firstInvocation = false, instance: " + org.jboss.as.ejb3.component.stateful.StatefulTransactionMarker.of(true))
 ENDRULE
 
+#Log StatefulSessionSynchronizationInterceptor - passing invocation through the context
+RULE logStatefulSessionSynchronizationInterceptor.processInvocation.proceed
+CLASS org.jboss.as.ejb3.component.stateful.StatefulSessionSynchronizationInterceptor
+METHOD processInvocation(InterceptorContext)
+AT INVOKE org.jboss.invocation.InterceptorContext.proceed()
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Passing the invocation on to the next step in the chain.")
+ENDRULE
 
+#Log StatefulSessionSynchronizationInterceptor - release instance
+RULE logStatefulSessionSynchronizationInterceptor.processInvocation.releaseInstance
+CLASS org.jboss.as.ejb3.component.stateful.StatefulSessionSynchronizationInterceptor
+METHOD processInvocation(InterceptorContext)
+AT INVOKE org.jboss.as.ejb3.component.stateful.StatefulSessionSynchronizationInterceptor.releaseInstance(StatefulSessionComponentInstance) ALL
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Synchronization was not set in this call, explicitly releasing stateful session component instance.")
+ENDRULE
 
+#Log StatefulSessionSynchronizationInterceptor - release lock
+RULE logStatefulSessionSynchronizationInterceptor.processInvocation.releaseLock
+CLASS org.jboss.as.ejb3.component.stateful.StatefulSessionSynchronizationInterceptor
+METHOD processInvocation(InterceptorContext)
+AT INVOKE org.jboss.as.ejb3.component.stateful.StatefulSessionSynchronizationInterceptor.releaseLock(StatefulSessionComponentInstance) ALL
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Releasing the lock, held by this thread, on the stateful session component instance: " + $instance)
+ENDRULE
 
-
-
-
-
-
-
-
+#Log StatefulSessionSynchronizationInterceptor - release cache
+RULE logStatefulSessionSynchronizationInterceptor.processInvocation.releaseCache
+CLASS org.jboss.as.ejb3.component.stateful.StatefulSessionSynchronizationInterceptor
+METHOD processInvocation(InterceptorContext)
+AT INVOKE org.jboss.as.ejb3.cache.Cache.release ALL
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Call the cache release of the stateful session component instance to decrease the usage count.")
+ENDRULE
 
 #Log StatefulSessionSynchronizationInterceptor - pop lock owner
 RULE logStatefulSessionSynchronizationInterceptor.processInvocation.popOwner
@@ -95,6 +170,13 @@ AT INVOKE org.jboss.as.ejb3.tx.OwnableReentrantLock.popOwner()
 IF true
 DO log($CLASS, "DEBUG", "(Method processInvocation) Popping lock owner from lock.")
 ENDRULE
+ 
+#------------ End of rules for method StatefulSessionSynchronizationInterceptor.processInvocation(InterceptorContext) ------------
+
+
+
+
+#----------------------------- Beginning of rules for classes SFSB/SBInvocationInterceptor) --------------------------------------
 
 #Log SFSBInvocationInterceptor - getting entity manager reference
 RULE logSFSBInvocationInterceptor.processInvocation.getEntityManagerReference
@@ -162,6 +244,12 @@ DO log($CLASS, "DEBUG", "(Method processInvocation) Current session bean invocat
 						" entity managers created without a JTA transaction.")
 ENDRULE
 
+#----------------------------- End of rules for classes SFSB/SBInvocationInterceptor) --------------------------------------
+
+
+
+
+
 #Log ExecutionTimeInterceptor - passing invocation through the context
 RULE logExecutionTimeInterceptor.processInvocation.proceed
 CLASS org.jboss.as.ejb3.component.invocationmetrics.ExecutionTimeInterceptor
@@ -170,6 +258,13 @@ AT INVOKE org.jboss.as.ejb3.component.EJBComponent.isStatisticsEnabled()
 IF !$component.isStatisticsEnabled()
 DO log($CLASS, "DEBUG", "(Method processInvocation) Enable statistics is false, passing the invocation on to the next step in the chain.")
 ENDRULE
+
+
+
+
+
+
+#----------------------------- Beginning of rules for class Jsr299BindingsInterceptor --------------------------------------
 
 #Log Jsr299BindingsInterceptor - process invocation
 RULE logJsr299BindingsInterceptor.processInvocation
@@ -270,6 +365,13 @@ IF true
 DO log($CLASS, "DEBUG", "(Method doLifecycleInterception) Interceptor bindings != null, delegating interception for current lifecycle interceptors: " 
 						+ $currentInterceptors)
 ENDRULE
+
+#----------------------------- End of rules for class Jsr299BindingsInterceptor --------------------------------------
+
+
+
+
+
 
 #Log beginning of interceptor creation process
 RULE logUserInterceptorFactory.create
