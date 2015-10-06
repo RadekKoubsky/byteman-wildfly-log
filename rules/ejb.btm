@@ -1,5 +1,175 @@
 HELPER org.jboss.byteman.koubsky.LogHelper
 
+#------------ Beginning of rules for method ChainedInterceptor.processInvocation(InterceptorContext) ------------
+
+#Log ChainedInterceptor - set current interceptors
+RULE logConcurrentContextInterceptor.processInvocation.setCurrentInterceptors
+CLASS org.jboss.invocation.ChainedInterceptor
+METHOD processInvocation(InterceptorContext)
+AT INVOKE org.jboss.invocation.InterceptorContext.setInterceptors(List)
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Setting current interceptors to the context, interceptors: " + $0.interceptors)
+ENDRULE
+
+#Log ChainedInterceptor - passing invocation through the context
+RULE logChainedInterceptor.processInvocation.proceed
+CLASS org.jboss.invocation.ChainedInterceptor
+METHOD processInvocation(InterceptorContext)
+AT INVOKE org.jboss.invocation.InterceptorContext.proceed()
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Passing the invocation on to the next step in the chain.")
+ENDRULE
+
+#Log ChainedInterceptor - set old interceptors
+RULE logChainedInterceptor.processInvocation.setOldInterceptors
+CLASS org.jboss.invocation.ChainedInterceptor
+METHOD processInvocation(InterceptorContext)
+AT INVOKE org.jboss.invocation.InterceptorContext.setInterceptors(List,int) ALL
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Setting old interceptors to the context with a starting index to proceed from.\n" + 
+						"Index: " + $oldNext + "\n" + "Old interceptors : " + $old)
+ENDRULE
+
+#------------ End of rules for method ChainedInterceptor.processInvocation(InterceptorContext) ------------
+
+#Log InitialInterceptor - passing invocation through the context
+RULE logInitialInterceptor.processInvocation.proceed
+CLASS org.jboss.invocation.InitialInterceptor
+METHOD processInvocation(InterceptorContext)
+AT INVOKE org.jboss.invocation.InterceptorContext.proceed()
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Passing the invocation on to the next step in the chain.")
+ENDRULE
+
+#------------ Beginning of rules for method ConcurrentContextInterceptor.processInvocation(InterceptorContext) ------------
+
+#Log ConcurrentContextInterceptor - push context
+RULE logConcurrentContextInterceptor.processInvocation.pushContext
+CLASS org.jboss.as.ee.concurrent.ConcurrentContextInterceptor
+METHOD processInvocation(InterceptorContext)
+AT INVOKE org.jboss.as.ee.concurrent.ConcurrentContext.pushCurrent(ConcurrentContext)
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Pushing concurrent context onto thread local stack in the current thread.")
+ENDRULE
+
+#Log ConcurrentContextInterceptor - passing invocation through the context
+RULE logConcurrentContextInterceptor.processInvocation.proceed
+CLASS org.jboss.as.ee.concurrent.ConcurrentContextInterceptor
+METHOD processInvocation(InterceptorContext)
+AT INVOKE org.jboss.invocation.InterceptorContext.proceed()
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Passing the invocation on to the next step in the chain.")
+ENDRULE
+
+#Log ConcurrentContextInterceptor - pop context
+RULE logConcurrentContextInterceptor.processInvocation.popContext
+CLASS org.jboss.as.ee.concurrent.ConcurrentContextInterceptor
+METHOD processInvocation(InterceptorContext)
+AT INVOKE org.jboss.as.ee.concurrent.ConcurrentContext.popCurrent()
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Popping the concurrent context in the current thread off the thread local stack.")
+ENDRULE
+
+#------------ End of rules for method ConcurrentContextInterceptor.processInvocation(InterceptorContext) ------------
+
+
+
+
+#------------ Beginning of rules for AbstractEJBRequestScopeActivationInterceptor and EjbRequestScopeActivationInterceptor classes ------------
+
+#Log EjbRequestScopeActivationInterceptor - call invoke on abstract parent
+RULE logAbstractEJBRequestScopeActivationInterceptor.processInvocation
+CLASS org.jboss.as.weld.ejb.EjbRequestScopeActivationInterceptor
+METHOD processInvocation(InterceptorContext)
+AT ENTRY
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Calling method aroundInvoke(InvocationContext) from " + 
+						"parent class AbstractEJBRequestScopeActivationInterceptor.")
+ENDRULE
+
+#Log AbstractEJBRequestScopeActivationInterceptor - request context is active
+RULE logAbstractEJBRequestScopeActivationInterceptor.aroundInvoke.requestContextActive
+CLASS org.jboss.weld.ejb.AbstractEJBRequestScopeActivationInterceptor
+METHOD aroundInvoke(InvocationContext)
+AFTER INVOKE org.jboss.weld.ejb.AbstractEJBRequestScopeActivationInterceptor.isRequestContextActive()
+IF $0.isRequestContextActive()
+DO log($CLASS, "DEBUG", "(Method aroundInvoke) Request context is active, proceeding with the next stage of invocation processing.")
+ENDRULE
+
+#Log AbstractEJBRequestScopeActivationInterceptor - request context is not active
+RULE logAbstractEJBRequestScopeActivationInterceptor.aroundInvoke.requestContextNotActive
+CLASS org.jboss.weld.ejb.AbstractEJBRequestScopeActivationInterceptor
+METHOD aroundInvoke(InvocationContext)
+AFTER INVOKE org.jboss.weld.ejb.AbstractEJBRequestScopeActivationInterceptor.isRequestContextActive()
+IF !$0.isRequestContextActive()
+DO log($CLASS, "DEBUG", "(Method aroundInvoke) Request context is not active, performing activation process...")
+ENDRULE
+
+#Log AbstractEJBRequestScopeActivationInterceptor - associate request context
+#TODO - POST A BUG, NOT WORK IN TRY - FINALLY
+RULE logAbstractEJBRequestScopeActivationInterceptor.aroundInvoke.associtateContext
+CLASS org.jboss.weld.ejb.AbstractEJBRequestScopeActivationInterceptor
+METHOD aroundInvoke(InvocationContext)
+AT INVOKE org.jboss.weld.context.BoundContext.associate(InvocationContext)
+IF true
+DO log($CLASS, "DEBUG", "(Method aroundInvoke) Associating the request context with the storage, storage instance: " + $instance)
+ENDRULE
+
+#Log AbstractEJBRequestScopeActivationInterceptor - activate request context
+#TODO - POST A BUG, NOT WORK IN TRY - FINALLY
+RULE logAbstractEJBRequestScopeActivationInterceptor.aroundInvoke.activateContext
+CLASS org.jboss.weld.ejb.AbstractEJBRequestScopeActivationInterceptor
+METHOD aroundInvoke(InvocationContext)
+AT INVOKE org.jboss.weld.context.ManagedContext.activate()
+IF true
+DO log($CLASS, "DEBUG", "(Method aroundInvoke) Activating request context.")
+ENDRULE
+
+#Log AbstractEJBRequestScopeActivationInterceptor - proceeding with the next stage after activation
+RULE logAbstractEJBRequestScopeActivationInterceptor.aroundInvoke.proceedAfterActivation
+CLASS org.jboss.weld.ejb.AbstractEJBRequestScopeActivationInterceptor
+METHOD aroundInvoke(InvocationContext)
+AT INVOKE javax.interceptor.InvocationContext.proceed() 2
+IF true
+DO log($CLASS, "DEBUG", "(Method aroundInvoke) Created an event with qualifier @Initialized(RequestScoped.class) " + 
+						"which is fired when the request context is initialized. Proceeding with the next stage of invocation processing...")
+ENDRULE
+
+#Log AbstractEJBRequestScopeActivationInterceptor - invalidate request context
+#TODO - POST A BUG, NOT WORK IN TRY - FINALLY
+RULE logAbstractEJBRequestScopeActivationInterceptor.aroundInvoke.invalidateContext
+CLASS org.jboss.weld.ejb.AbstractEJBRequestScopeActivationInterceptor
+METHOD aroundInvoke(InvocationContext)
+AT INVOKE org.jboss.weld.context.ManagedContext.invalidate() ALL
+IF true
+DO log($CLASS, "DEBUG", "(Method aroundInvoke) Invalidating the request context as due for destruction when deactivate is called.")
+ENDRULE
+
+#Log AbstractEJBRequestScopeActivationInterceptor - deactivate request context
+#TODO - POST A BUG, NOT WORK IN TRY - FINALLY
+RULE logAbstractEJBRequestScopeActivationInterceptor.aroundInvoke.deactivateContext
+CLASS org.jboss.weld.ejb.AbstractEJBRequestScopeActivationInterceptor
+METHOD aroundInvoke(InvocationContext)
+AT INVOKE org.jboss.weld.context.ManagedContext.deactivate() ALL
+IF true
+DO log($CLASS, "DEBUG", "(Method aroundInvoke) Deactivating the request context, destroying any instances if the context is invalid.")
+ENDRULE
+
+#Log AbstractEJBRequestScopeActivationInterceptor - dissociate request context
+#TODO - POST A BUG, NOT WORK IN TRY - FINALLY
+RULE logAbstractEJBRequestScopeActivationInterceptor.aroundInvoke.dissociateContext
+CLASS org.jboss.weld.ejb.AbstractEJBRequestScopeActivationInterceptor
+METHOD aroundInvoke(InvocationContext)
+AT INVOKE org.jboss.weld.context.BoundContext.dissociate(InvocationContext) ALL
+IF true
+DO log($CLASS, "DEBUG", "(Method aroundInvoke) Dissociating the request context from the storage, storage instance: " + $instance + 
+						". Creating an event with qualifier @Destroyed(RequestScoped.class) which is fired when the request context is destroyed.")
+ENDRULE
+
+#------------ End of rules for method AbstractEJBRequestScopeActivationInterceptor.aroundInvoke(InvocationContext) ------------
+
+
+
 
 #------------ Beginning of rules for method StatefulSessionSynchronizationInterceptor.processInvocation(InterceptorContext) ------------
 
@@ -168,7 +338,7 @@ CLASS org.jboss.as.ejb3.component.stateful.StatefulSessionSynchronizationInterce
 METHOD processInvocation(InterceptorContext)
 AT INVOKE org.jboss.as.ejb3.tx.OwnableReentrantLock.popOwner()
 IF true
-DO log($CLASS, "DEBUG", "(Method processInvocation) Popping lock owner from lock.")
+DO log($CLASS, "DEBUG", "(Method processInvocation) Popping lock owner off the lock.")
 ENDRULE
  
 #------------ End of rules for method StatefulSessionSynchronizationInterceptor.processInvocation(InterceptorContext) ------------
