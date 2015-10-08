@@ -242,7 +242,7 @@ ENDRULE
 RULE logStatefulSessionSynchronizationInterceptor.processInvocation.getTransactionKey
 CLASS org.jboss.as.ejb3.component.stateful.StatefulSessionSynchronizationInterceptor
 METHOD processInvocation(InterceptorContext)
-AFTER WRITE $currentTransactionKey
+AFTER WRITE $currentTransactionKey 2
 IF true
 DO log($CLASS, "DEBUG", "(Method processInvocation) Getting current transaction key, key: " + $currentTransactionKey)
 ENDRULE
@@ -293,7 +293,7 @@ AFTER INVOKE org.jboss.as.ejb3.component.stateful.StatefulSessionComponentInstan
 IF $instance.isSynchronizationRegistered()
 DO log($CLASS, "DEBUG", "(Method processInvocation) Synchronization is registered, putting private data to interceptor context:\n" + 
 						"Type: " + "StatefulTransactionMarker.class" + "\n" + 
-						"Created instance with firstInvocation = false, instance: " + org.jboss.as.ejb3.component.stateful.StatefulTransactionMarker.of(true))
+						"Created instance with firstInvocation = false, instance: " + org.jboss.as.ejb3.component.stateful.StatefulTransactionMarker.of(false))
 ENDRULE
 
 #Log StatefulSessionSynchronizationInterceptor - passing invocation through the context
@@ -440,7 +440,7 @@ ENDRULE
 RULE logJsr299BindingsInterceptor.processInvocation
 CLASS org.jboss.as.weld.ejb.Jsr299BindingsInterceptor
 METHOD processInvocation(InterceptorContext)
-AT LINE 91
+AFTER WRITE $interceptorBindings
 IF true
 DO log($CLASS, "DEBUG", "(Method processInvocation) Processing invocation, getting interceptor instances and bindings:\n" + 
 						"InterceptorContext: " + $context + "\ninterceptionType: " + $0.interceptionType + 

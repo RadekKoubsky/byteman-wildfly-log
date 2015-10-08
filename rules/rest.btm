@@ -88,14 +88,14 @@ CLASS org.jboss.resteasy.plugins.server.servlet.ServletContainerDispatcher
 METHOD service(String, HttpServletRequest, HttpServletResponse, boolean)
 AT INVOKE org.jboss.resteasy.core.Dispatcher.invoke(HttpRequest, HttpResponse)
 IF true
-DO log($CLASS, "DEBUG", "(Method service) Variable handleNotFound = true, invoking request via dispatcher: " + $dispatcher)
+DO log($CLASS, "DEBUG", "(Method service) Variable handleNotFound = true, invoking request via dispatcher: " + $0.dispatcher)
 ENDRULE
 
 #Log invoking propagate not found
 RULE logServletContainerDispatcher.service.invokePropagateNotFound
 CLASS org.jboss.resteasy.plugins.server.servlet.ServletContainerDispatcher
 METHOD service(String, HttpServletRequest, HttpServletResponse, boolean)
-AT INVOKE org.jboss.resteasy.core.Dispatcher.invoke(HttpRequest, HttpResponse)
+AT INVOKE org.jboss.resteasy.core.SynchronousDispatcher.invokePropagateNotFound(HttpRequest, HttpResponse)
 IF true
 DO log($CLASS, "DEBUG", "(Method service) Variable handleNotFound = false, invoking request via SynchronousDispatcher.invokePropagateNotFound"
 						+ "(HttpRequest request, HttpResponse response).")
@@ -105,7 +105,7 @@ ENDRULE
 RULE logServletContainerDispatcher.service.clarContextData
 CLASS org.jboss.resteasy.plugins.server.servlet.ServletContainerDispatcher
 METHOD service(String, HttpServletRequest, HttpServletResponse, boolean)
-AT INVOKE org.jboss.resteasy.spi.ResteasyProviderFactory.clearContextData()
+AT INVOKE org.jboss.resteasy.spi.ResteasyProviderFactory.clearContextData() ALL
 IF true
 DO log($CLASS, "DEBUG", "(Method service) Clearing context data...")
 ENDRULE
