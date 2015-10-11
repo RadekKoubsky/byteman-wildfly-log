@@ -1,5 +1,68 @@
 HELPER org.jboss.byteman.koubsky.LogHelper
 
+#------------ Beginning of rules for method ComponentDispatcherInterceptor.processInvocation(InterceptorContext) ------------
+
+#Log ComponentDispatcherInterceptor - get component instance from context
+RULE logComponentDispatcherInterceptor.processInvocation.getComponentInstance
+CLASS org.jboss.as.ee.component.interceptors.ComponentDispatcherInterceptor
+METHOD processInvocation(InterceptorContext)
+AT ENTRY
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Getting component instance from interceptor context.")
+ENDRULE
+
+#Log ComponentDispatcherInterceptor - component instance not null
+RULE logComponentDispatcherInterceptor.processInvocation.componentInstanceNotNull
+CLASS org.jboss.as.ee.component.interceptors.ComponentDispatcherInterceptor
+METHOD processInvocation(InterceptorContext)
+AFTER WRITE $componentInstance
+IF $componentInstance != null
+DO log($CLASS, "DEBUG", "(Method processInvocation) Component instance: " + $componentInstance + 
+						" is not null, setting method and target to the interpcetor context.")
+ENDRULE
+
+#Log ComponentDispatcherInterceptor - get old method
+RULE logComponentDispatcherInterceptor.processInvocation.getOldMethod
+CLASS org.jboss.as.ee.component.interceptors.ComponentDispatcherInterceptor
+METHOD processInvocation(InterceptorContext)
+AFTER WRITE $oldMethod
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Getting old method from context, old method: " + $oldMethod)
+ENDRULE
+
+#Log ComponentDispatcherInterceptor - set current method
+RULE logComponentDispatcherInterceptor.processInvocation.setCurrentMethod
+CLASS org.jboss.as.ee.component.interceptors.ComponentDispatcherInterceptor
+METHOD processInvocation(InterceptorContext)
+AT INVOKE org.jboss.invocation.InterceptorContext.setMethod(Method) 1
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Setting current component method to the context, current method: " + $0.componentMethod)
+ENDRULE
+
+#Log ComponentDispatcherInterceptor - set target instance
+RULE logComponentDispatcherInterceptor.processInvocation.setTarget
+CLASS org.jboss.as.ee.component.interceptors.ComponentDispatcherInterceptor
+METHOD processInvocation(InterceptorContext)
+AT INVOKE org.jboss.invocation.InterceptorContext.setTarget(Object)
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Setting target instance of the component instance class, instance: " + $componentInstance.getInstance())
+ENDRULE
+
+#Log ComponentDispatcherInterceptor - process invocation
+RULE logComponentDispatcherInterceptor.processInvocation.processInvocation
+CLASS org.jboss.as.ee.component.interceptors.ComponentDispatcherInterceptor
+METHOD processInvocation(InterceptorContext)
+AFTER INVOKE org.jboss.invocation.InterceptorContext.setTarget(Object)
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Current method and target instance has been set, " + 
+						"passing the invocation on to the next step in the chain.")
+ENDRULE
+
+#------------ End of rules for method ComponentDispatcherInterceptor.processInvocation(InterceptorContext) ------------
+
+
+
+
 #------------ Beginning of rules for method ChainedInterceptor.processInvocation(InterceptorContext) ------------
 
 #Log ChainedInterceptor - set current interceptors
@@ -109,16 +172,16 @@ ENDRULE
 RULE logAbstractEJBRequestScopeActivationInterceptor.aroundInvoke.associtateContext
 CLASS org.jboss.weld.ejb.AbstractEJBRequestScopeActivationInterceptor
 METHOD aroundInvoke(InvocationContext)
-AT INVOKE org.jboss.weld.context.BoundContext.associate(InvocationContext)
+AT INVOKE associate
 IF true
-DO log($CLASS, "DEBUG", "(Method aroundInvoke) Associating the request context with the storage, storage instance: " + $instance)
+DO log($CLASS, "DEBUG", "(Method aroundInvoke) Associating the request context with the storage, storage instance: " + $invocation)
 ENDRULE
 
 #Log AbstractEJBRequestScopeActivationInterceptor - activate request context
 RULE logAbstractEJBRequestScopeActivationInterceptor.aroundInvoke.activateContext
 CLASS org.jboss.weld.ejb.AbstractEJBRequestScopeActivationInterceptor
 METHOD aroundInvoke(InvocationContext)
-AT INVOKE org.jboss.weld.context.ManagedContext.activate()
+AT INVOKE activate
 IF true
 DO log($CLASS, "DEBUG", "(Method aroundInvoke) Activating request context.")
 ENDRULE
@@ -137,7 +200,7 @@ ENDRULE
 RULE logAbstractEJBRequestScopeActivationInterceptor.aroundInvoke.invalidateContext
 CLASS org.jboss.weld.ejb.AbstractEJBRequestScopeActivationInterceptor
 METHOD aroundInvoke(InvocationContext)
-AT INVOKE org.jboss.weld.context.ManagedContext.invalidate() ALL
+AT INVOKE invalidate ALL
 IF true
 DO log($CLASS, "DEBUG", "(Method aroundInvoke) Invalidating the request context as due for destruction when deactivate is called.")
 ENDRULE
@@ -146,7 +209,7 @@ ENDRULE
 RULE logAbstractEJBRequestScopeActivationInterceptor.aroundInvoke.deactivateContext
 CLASS org.jboss.weld.ejb.AbstractEJBRequestScopeActivationInterceptor
 METHOD aroundInvoke(InvocationContext)
-AT INVOKE org.jboss.weld.context.ManagedContext.deactivate() ALL
+AT INVOKE deactivate ALL
 IF true
 DO log($CLASS, "DEBUG", "(Method aroundInvoke) Deactivating the request context, destroying any instances if the context is invalid.")
 ENDRULE
@@ -155,9 +218,9 @@ ENDRULE
 RULE logAbstractEJBRequestScopeActivationInterceptor.aroundInvoke.dissociateContext
 CLASS org.jboss.weld.ejb.AbstractEJBRequestScopeActivationInterceptor
 METHOD aroundInvoke(InvocationContext)
-AT INVOKE org.jboss.weld.context.BoundContext.dissociate(InvocationContext) ALL
+AT INVOKE dissociate ALL
 IF true
-DO log($CLASS, "DEBUG", "(Method aroundInvoke) Dissociating the request context from the storage, storage instance: " + $instance + 
+DO log($CLASS, "DEBUG", "(Method aroundInvoke) Dissociating the request context from the storage, storage instance: " + $invocation + 
 						". Creating an event with qualifier @Destroyed(RequestScoped.class) which is fired when the request context is destroyed.")
 ENDRULE
 
