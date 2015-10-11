@@ -1,5 +1,54 @@
 HELPER org.jboss.byteman.koubsky.LogHelper
 
+#------------ Beginning of rules for class org.jboss.as.ejb3.tx.CMTTxInterceptor ------------
+
+#Log CMTTxInterceptor - begin transaction
+RULE logCMTTxInterceptor.invokeInOurTx.beginTransaction
+CLASS org.jboss.as.ejb3.tx.CMTTxInterceptor
+METHOD invokeInOurTx(InterceptorContext, TransactionManager, EJBComponent)
+AT INVOKE javax.transaction.TransactionManager.begin()
+IF true
+DO log($CLASS, "DEBUG", "(Method invokeInOurTx) Starting a new transaction, and associating it with the calling thread.")
+ENDRULE
+
+#Log CMTTxInterceptor - get transaction
+RULE logCMTTxInterceptor.invokeInOurTx.getTransaction
+CLASS org.jboss.as.ejb3.tx.CMTTxInterceptor
+METHOD invokeInOurTx(InterceptorContext, TransactionManager, EJBComponent)
+AFTER WRITE $tx
+IF true
+DO log($CLASS, "DEBUG", "(Method invokeInOurTx) Getting transaction from transaction manager, transaction: " + $tx)
+ENDRULE
+
+#Log CMTTxInterceptor - passing invocation through the context
+RULE logCMTTxInterceptor.invokeInOurTx.proceed
+CLASS org.jboss.as.ejb3.tx.CMTTxInterceptor
+METHOD invokeInOurTx(InterceptorContext, TransactionManager, EJBComponent)
+AT INVOKE org.jboss.invocation.InterceptorContext.proceed()
+IF true
+DO log($CLASS, "DEBUG", "(Method invokeInOurTx) Passing the invocation on to the next step in the chain.")
+ENDRULE
+
+#Log CMTTxInterceptor - end transaction
+RULE logCMTTxInterceptor.endTransaction.endTransaction
+CLASS org.jboss.as.ejb3.tx.CMTTxInterceptor
+METHOD endTransaction(TransactionManager, Transaction)
+AFTER WRITE $txStatus
+IF true
+DO log($CLASS, "DEBUG", "(Method invokeInOurTx) Ending transaction, status: " + $txStatus)
+ENDRULE
+
+#Log CMTTxInterceptor - commit transaction
+RULE logCMTTxInterceptor.endTransaction.commit
+CLASS org.jboss.as.ejb3.tx.CMTTxInterceptor
+METHOD endTransaction(TransactionManager, Transaction)
+AT INVOKE javax.transaction.TransactionManager.commit()
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Committing the transaction associated with the calling thread.")
+ENDRULE
+
+#------------ End of rules for class org.jboss.as.ejb3.tx.CMTTxInterceptor ------------
+
 #------------ Beginning of rules for method ComponentDispatcherInterceptor.processInvocation(InterceptorContext) ------------
 
 #Log ComponentDispatcherInterceptor - get component instance from context
