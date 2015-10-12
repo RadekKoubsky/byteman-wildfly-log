@@ -1,6 +1,58 @@
 HELPER org.jboss.byteman.koubsky.LogHelper
 
+#------------ Beginning of rules for method CurrentInvocationContextInterceptor.processInvocation(InterceptorContext) ------------
+
+#Log ChainedInterceptor - push context
+RULE logCurrentInvocationContextInterceptor.processInvocation.pushContext
+CLASS org.jboss.as.ejb3.component.interceptors.CurrentInvocationContextInterceptor
+METHOD processInvocation(InterceptorContext)
+AT INVOKE org.jboss.as.ejb3.context.CurrentInvocationContext.push(InterceptorContext)
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Pushing current interceptor context onto thread local stack, context: " + $context)
+ENDRULE
+
+#Log CurrentInvocationContextInterceptor - passing invocation through the context
+RULE logCurrentInvocationContextInterceptor.processInvocation.proceed
+CLASS org.jboss.as.ejb3.component.interceptors.CurrentInvocationContextInterceptor
+METHOD processInvocation(InterceptorContext)
+AT INVOKE org.jboss.invocation.InterceptorContext.proceed()
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Passing the invocation on to the next step in the chain.")
+ENDRULE
+
+#Log CurrentInvocationContextInterceptor - pop context
+RULE logCurrentInvocationContextInterceptor.processInvocation.pop
+CLASS org.jboss.as.ejb3.component.interceptors.CurrentInvocationContextInterceptor
+METHOD processInvocation(InterceptorContext)
+AT INVOKE org.jboss.as.ejb3.context.CurrentInvocationContext.pop() ALL
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Popping current interceptor context off the thread local stack.")
+ENDRULE
+
+#------------ End of rules for method ChainedInterceptor.processInvocation(InterceptorContext) ------------
+
 #------------ Beginning of rules for class org.jboss.as.ejb3.tx.CMTTxInterceptor ------------
+
+#Log CMTTxInterceptor - process invocation
+RULE logCMTTxInterceptor.processInvocation
+CLASS org.jboss.as.ejb3.tx.CMTTxInterceptor
+METHOD processInvocation(InterceptorContext)
+AFTER WRITE $timeoutInSeconds
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Trying to invoke transaction of an EJBComponent according to transaction attribute," + 
+						"\nEJBComponent: " + $component + "\nTransactionAttributeType: " +
+						  $attr + "\nTransaction timeout in seconds: " + $timeoutInSeconds)
+						
+ENDRULE
+
+#Log CMTTxInterceptor - invoke in our tx
+RULE logCMTTxInterceptor.invokeInOurTx
+CLASS org.jboss.as.ejb3.tx.CMTTxInterceptor
+METHOD invokeInOurTx(InterceptorContext, TransactionManager, EJBComponent)
+AT ENTRY
+IF true
+DO log($CLASS, "DEBUG", "(Method invokeInOurTx) Invoking in our transaction using transaction manager: " + $tm)
+ENDRULE
 
 #Log CMTTxInterceptor - begin transaction
 RULE logCMTTxInterceptor.invokeInOurTx.beginTransaction
@@ -35,7 +87,7 @@ CLASS org.jboss.as.ejb3.tx.CMTTxInterceptor
 METHOD endTransaction(TransactionManager, Transaction)
 AFTER WRITE $txStatus
 IF true
-DO log($CLASS, "DEBUG", "(Method invokeInOurTx) Ending transaction, status: " + $txStatus)
+DO log($CLASS, "DEBUG", "(Method endTransaction) Ending transaction, status: " + $txStatus)
 ENDRULE
 
 #Log CMTTxInterceptor - commit transaction
@@ -44,7 +96,25 @@ CLASS org.jboss.as.ejb3.tx.CMTTxInterceptor
 METHOD endTransaction(TransactionManager, Transaction)
 AT INVOKE javax.transaction.TransactionManager.commit()
 IF true
-DO log($CLASS, "DEBUG", "(Method processInvocation) Committing the transaction associated with the calling thread.")
+DO log($CLASS, "DEBUG", "(Method endTransaction) Committing the transaction associated with the calling thread.")
+ENDRULE
+
+#Log CMTTxInterceptor - invoke in caller transaction
+RULE logCMTTxInterceptor.invokeInCallerTx
+CLASS org.jboss.as.ejb3.tx.CMTTxInterceptor
+METHOD invokeInCallerTx(InterceptorContext, Transaction, final EJBComponent)
+AT ENTRY
+IF true
+DO log($CLASS, "DEBUG", "(Method invokeInCallerTx) Invoking in caller transaction, passing the invocation on to the next step in the chain.")
+ENDRULE
+
+#Log CMTTxInterceptor - invoke in no transaction
+RULE logCMTTxInterceptor.invokeInNoTx
+CLASS org.jboss.as.ejb3.tx.CMTTxInterceptor
+METHOD invokeInNoTx(InterceptorContext, EJBComponent)
+AT ENTRY
+IF true
+DO log($CLASS, "DEBUG", "(Method invokeInNoTx) Invoking in no transaction, passing the invocation on to the next step in the chain.")
 ENDRULE
 
 #------------ End of rules for class org.jboss.as.ejb3.tx.CMTTxInterceptor ------------
@@ -115,7 +185,7 @@ ENDRULE
 #------------ Beginning of rules for method ChainedInterceptor.processInvocation(InterceptorContext) ------------
 
 #Log ChainedInterceptor - set current interceptors
-RULE logConcurrentContextInterceptor.processInvocation.setCurrentInterceptors
+RULE logChainedInterceptor.processInvocation.setCurrentInterceptors
 CLASS org.jboss.invocation.ChainedInterceptor
 METHOD processInvocation(InterceptorContext)
 AT INVOKE org.jboss.invocation.InterceptorContext.setInterceptors(List)
