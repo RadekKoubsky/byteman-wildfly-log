@@ -1,5 +1,47 @@
 HELPER org.jboss.byteman.koubsky.LogHelper
 
+#------------ Beginning of rules for method SecurityContextInterceptor.processInvocation(InterceptorContext) ------------
+
+#Log SecurityContextInterceptor - entry
+RULE logSecurityContextInterceptor.processInvocation.entry
+CLASS org.jboss.as.ejb3.security.SecurityContextInterceptor
+METHOD processInvocation(InterceptorContext)
+AT ENTRY
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Checking privileges for privileged actions, push action: " + $0.pushAction + 
+						", pop action: " + $0.popAction)
+ENDRULE
+
+#Log SecurityContextInterceptor - checking permissions
+RULE logSecurityContextInterceptor.processInvocation.checkPermissions
+CLASS org.jboss.as.ejb3.security.SecurityContextInterceptor
+METHOD processInvocation(InterceptorContext)
+AT INVOKE org.wildfly.security.manager.WildFlySecurityManager.isChecking() ALL
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Security manager is checking permissions, performing privileged action" + 
+						" with privileges enabled.")
+ENDRULE
+
+#Log SecurityContextInterceptor - passing invocation through the context
+RULE logSecurityContextInterceptor.processInvocation.proceed
+CLASS org.jboss.as.ejb3.security.SecurityContextInterceptor
+METHOD processInvocation(InterceptorContext)
+AT INVOKE org.jboss.invocation.InterceptorContext.proceed()
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Passing the invocation on to the next step in the chain.")
+ENDRULE
+
+#Log SecurityContextInterceptor - run action
+RULE logSecurityContextInterceptor.processInvocation.pop
+CLASS org.jboss.as.ejb3.security.SecurityContextInterceptor
+METHOD processInvocation(InterceptorContext)
+AT INVOKE java.security.PrivilegedAction.run() ALL
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Performing computation for privileged action.")
+ENDRULE
+
+#------------ End of rules for method CurrentInvocationContextInterceptor.processInvocation(InterceptorContext) ------------
+
 #------------ Beginning of rules for method CurrentInvocationContextInterceptor.processInvocation(InterceptorContext) ------------
 
 #Log ChainedInterceptor - push context
@@ -29,7 +71,7 @@ IF true
 DO log($CLASS, "DEBUG", "(Method processInvocation) Popping current interceptor context off the thread local stack.")
 ENDRULE
 
-#------------ End of rules for method ChainedInterceptor.processInvocation(InterceptorContext) ------------
+#------------ End of rules for method CurrentInvocationContextInterceptor.processInvocation(InterceptorContext) ------------
 
 #------------ Beginning of rules for class org.jboss.as.ejb3.tx.CMTTxInterceptor ------------
 
