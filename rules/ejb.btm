@@ -1,5 +1,149 @@
 HELPER org.jboss.byteman.koubsky.LogHelper
 
+#------------ Beginning of rules for method PrivilegedWithCombinerInterceptor.processInvocation(InterceptorContext) ------------
+
+#Log PrivilegedWithCombinerInterceptor - do privileged with combiner
+RULE logPrivilegedWithCombinerInterceptor.processInvocation.doPrivilegedWithCombiner
+CLASS org.jboss.invocation.PrivilegedWithCombinerInterceptor
+METHOD processInvocation(InterceptorContext)
+AT INVOKE java.security.AccessController.doPrivilegedWithCombiner(PrivilegedExceptionAction)
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Security manager is not null, performing interceptor context" + 
+						" as an action with privileges enabled.Preserving the current AccessControlContext's " + 
+						"DomainCombiner while the action is performed.")
+ENDRULE
+
+#Log PrivilegedWithCombinerInterceptor - passing invocation through the context
+RULE logPrivilegedWithCombinerInterceptor.processInvocation.proceed
+CLASS org.jboss.invocation.PrivilegedWithCombinerInterceptor
+METHOD processInvocation(InterceptorContext)
+AT INVOKE org.jboss.invocation.InterceptorContext.run()
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Security manager is null, passing the invocation on to the next step in the chain.")
+ENDRULE
+
+#------------ End of rules for method PrivilegedWithCombinerInterceptor.processInvocation(InterceptorContext) ------------
+
+
+
+
+#Log AccessCheckingInterceptor - passing invocation through the context
+RULE logAccessCheckingInterceptor.processInvocation.proceed
+CLASS org.jboss.invocation.AccessCheckingInterceptor
+METHOD processInvocation(InterceptorContext)
+AT INVOKE org.wildfly.security.manager.WildFlySecurityManager.doChecked(PrivilegedExceptionAction)
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Performing interceptor context as an action with permission checking enabled by " + 
+						"WildFlySecurityManager.")
+ENDRULE
+
+
+
+
+#------------ Beginning of rules for method ContextClassLoaderInterceptor.processInvocation(InterceptorContext) ------------
+
+#Log ContextClassLoaderInterceptor - set context class loader
+RULE logContextClassLoaderInterceptor.processInvocation.setClassloader
+CLASS org.jboss.invocation.ContextClassLoaderInterceptor
+METHOD processInvocation(InterceptorContext)
+AT INVOKE org.jboss.invocation.InterceptorContext.proceed()
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Setting thread context class loader for the duration of an invocation:" + 
+						"\nOld classloader: " + $old + "\nCurrent classloader: " + $0.classLoader)
+ENDRULE
+
+#Log ContextClassLoaderInterceptor - passing invocation through the context
+RULE logContextClassLoaderInterceptor.processInvocation.proceed
+CLASS org.jboss.invocation.ContextClassLoaderInterceptor
+METHOD processInvocation(InterceptorContext)
+AT INVOKE org.jboss.invocation.InterceptorContext.proceed()
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Passing the invocation on to the next step in the chain.")
+ENDRULE
+
+#------------ End of rules for method ContextClassLoaderInterceptor.processInvocation(InterceptorContext) ------------
+
+
+
+
+#------------ Beginning of rules for method AdditionalSetupInterceptor.processInvocation(InterceptorContext) ------------
+
+#Log AdditionalSetupInterceptor - setup action
+RULE logAdditionalSetupInterceptor.processInvocation.setupAction
+CLASS org.jboss.as.ejb3.component.interceptors.AdditionalSetupInterceptor
+METHOD processInvocation(InterceptorContext)
+AT INVOKE org.jboss.as.server.deployment.SetupAction.setup(Map)
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Performing action which sets up the context, action: " + $action)
+ENDRULE
+
+#Log AdditionalSetupInterceptor - passing invocation through the context
+RULE logAdditionalSetupInterceptor.processInvocation.proceed
+CLASS org.jboss.as.ejb3.component.interceptors.AdditionalSetupInterceptor
+METHOD processInvocation(InterceptorContext)
+AT INVOKE org.jboss.invocation.InterceptorContext.proceed()
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Passing the invocation on to the next step in the chain.")
+ENDRULE
+
+#Log AdditionalSetupInterceptor - tear down action
+RULE logAdditionalSetupInterceptor.processInvocation.teardownAction
+CLASS org.jboss.as.ejb3.component.interceptors.AdditionalSetupInterceptor
+METHOD processInvocation(InterceptorContext)
+AT INVOKE org.jboss.as.server.deployment.SetupAction.teardown(Map) ALL
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Performing action which tears down the context, action: " + $@[0])
+ENDRULE
+
+#------------ End of rules for method AdditionalSetupInterceptor.processInvocation(InterceptorContext) ------------
+
+
+
+
+#------------ Beginning of rules for method NamespaceContextInterceptor.processInvocation(InterceptorContext) ------------
+
+#Log NamespaceContextInterceptor - push service name
+RULE logNamespaceContextInterceptor.processInvocation.pushServiceName
+CLASS org.jboss.as.ee.component.NamespaceContextInterceptor
+METHOD processInvocation(InterceptorContext)
+AT INVOKE org.jboss.as.naming.WritableServiceBasedNamingStore.pushOwner(ServiceName) ALL
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Pushing service name onto WritableServiceBasedNamingStore thread local stack, " + 
+						" service name: " + $0.deploymentUnitServiceName)
+ENDRULE
+
+#Log NamespaceContextInterceptor - passing invocation through the context
+RULE logNamespaceContextInterceptor.processInvocation.proceed
+CLASS org.jboss.as.ee.component.NamespaceContextInterceptor
+METHOD processInvocation(InterceptorContext)
+AT INVOKE org.jboss.invocation.InterceptorContext.proceed()
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Passing the invocation on to the next step in the chain.")
+ENDRULE
+
+#Log NamespaceContextInterceptor - pop service name
+RULE logNamespaceContextInterceptor.processInvocation.popServiceName
+CLASS org.jboss.as.ee.component.NamespaceContextInterceptor
+METHOD processInvocation(InterceptorContext)
+AT INVOKE org.jboss.as.naming.WritableServiceBasedNamingStore.popOwner() ALL
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Popping service name off the WritableServiceBasedNamingStore thread local stack, " + 
+						"service name: " + $0.deploymentUnitServiceName)
+ENDRULE
+
+#------------ End of rules for method NamespaceContextInterceptor.processInvocation(InterceptorContext) ------------
+
+#Log WaitTimeInterceptor - passing invocation through the context
+RULE logWaitTimeInterceptor.processInvocation.proceed
+CLASS org.jboss.as.ejb3.component.invocationmetrics.WaitTimeInterceptor
+METHOD processInvocation(InterceptorContext)
+AT INVOKE org.jboss.invocation.InterceptorContext.proceed()
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Putting start wait time private data to interceptor context, private data: WaitTimeInterceptor.START_WAIT_TIME: " 
+						+ $context.getPrivateData(org.jboss.as.ejb3.component.invocationmetrics.WaitTimeInterceptor.START_WAIT_TIME) + 
+						" (milliseconds)")
+ENDRULE
+
 #------------ Beginning of rules for method SecurityContextInterceptor.processInvocation(InterceptorContext) ------------
 
 #Log SecurityContextInterceptor - entry
@@ -19,7 +163,7 @@ METHOD processInvocation(InterceptorContext)
 AT INVOKE org.wildfly.security.manager.WildFlySecurityManager.isChecking() ALL
 IF true
 DO log($CLASS, "DEBUG", "(Method processInvocation) Security manager is checking permissions, performing privileged action" + 
-						" with privileges enabled.")
+						" with all of the permissions possessed by the caller's protection domain.")
 ENDRULE
 
 #Log SecurityContextInterceptor - passing invocation through the context
@@ -32,19 +176,22 @@ DO log($CLASS, "DEBUG", "(Method processInvocation) Passing the invocation on to
 ENDRULE
 
 #Log SecurityContextInterceptor - run action
-RULE logSecurityContextInterceptor.processInvocation.pop
+RULE logSecurityContextInterceptor.processInvocation.runAction
 CLASS org.jboss.as.ejb3.security.SecurityContextInterceptor
 METHOD processInvocation(InterceptorContext)
 AT INVOKE java.security.PrivilegedAction.run() ALL
 IF true
-DO log($CLASS, "DEBUG", "(Method processInvocation) Performing computation for privileged action.")
+DO log($CLASS, "DEBUG", "(Method processInvocation) Security manager has already checked permissions, performing computation for privileged action directly.")
 ENDRULE
 
 #------------ End of rules for method CurrentInvocationContextInterceptor.processInvocation(InterceptorContext) ------------
 
+
+
+
 #------------ Beginning of rules for method CurrentInvocationContextInterceptor.processInvocation(InterceptorContext) ------------
 
-#Log ChainedInterceptor - push context
+#Log CurrentInvocationContextInterceptor - push context
 RULE logCurrentInvocationContextInterceptor.processInvocation.pushContext
 CLASS org.jboss.as.ejb3.component.interceptors.CurrentInvocationContextInterceptor
 METHOD processInvocation(InterceptorContext)
@@ -72,6 +219,9 @@ DO log($CLASS, "DEBUG", "(Method processInvocation) Popping current interceptor 
 ENDRULE
 
 #------------ End of rules for method CurrentInvocationContextInterceptor.processInvocation(InterceptorContext) ------------
+
+
+
 
 #------------ Beginning of rules for class org.jboss.as.ejb3.tx.CMTTxInterceptor ------------
 
@@ -160,6 +310,9 @@ DO log($CLASS, "DEBUG", "(Method invokeInNoTx) Invoking in no transaction, passi
 ENDRULE
 
 #------------ End of rules for class org.jboss.as.ejb3.tx.CMTTxInterceptor ------------
+
+
+
 
 #------------ Beginning of rules for method ComponentDispatcherInterceptor.processInvocation(InterceptorContext) ------------
 
