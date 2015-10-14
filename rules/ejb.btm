@@ -1,5 +1,32 @@
 HELPER org.jboss.byteman.koubsky.LogHelper
 
+#------------ Beginning of rules for method ProxyInvocationHandler.invoke(Object, Method, Object[]) ------------
+
+#Log ProxyInvocationHandler - entry
+RULE logProxyInvocationHandler.invoke
+CLASS org.jboss.as.ee.component.ProxyInvocationHandler
+METHOD invoke(Object, Method, Object[])
+AT ENTRY
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Processing a method invocation on a proxy instance:" + 
+						"\nProxy instance: " + $proxy + "\nMethod: " + $method + "\nArguments: " + java.util.Arrays.toString($args))
+ENDRULE
+
+#Log ProxyInvocationHandler - process invocationS
+RULE logProxyInvocationHandler.invoke.processInvocation
+CLASS org.jboss.as.ee.component.ProxyInvocationHandler
+METHOD invoke(Object, Method, Object[])
+AT INVOKE org.jboss.invocation.Interceptor.processInvocation(InterceptorContext)
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Starting interceptor chain with given interceptor and context: " + 
+						"\nInterceptor instance: " + $interceptor + "\nContext: " + $context)
+ENDRULE
+
+#------------ End of rules for method ProxyInvocationHandler.invoke(Object, Method, Object[]) ------------
+
+
+
+
 #------------ Beginning of rules for method PrivilegedWithCombinerInterceptor.processInvocation(InterceptorContext) ------------
 
 #Log PrivilegedWithCombinerInterceptor - do privileged with combiner
