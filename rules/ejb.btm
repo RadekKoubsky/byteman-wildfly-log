@@ -613,7 +613,7 @@ ENDRULE
 RULE logStatefulSessionSynchronizationInterceptor.processInvocation.tryAcquire
 CLASS org.jboss.as.ejb3.component.stateful.StatefulSessionSynchronizationInterceptor
 METHOD processInvocation(InterceptorContext)
-AFTER WRITE $acquired
+AT INVOKE org.jboss.as.ejb3.tx.OwnableReentrantLock.tryLock(long, TimeUnit)
 IF true
 DO log($CLASS, "DEBUG", "(Method processInvocation) Trying to acquire the lock within given time, time: " + $timeout.getValue() + "; unit: " + 
 						$timeout.getTimeUnit())
