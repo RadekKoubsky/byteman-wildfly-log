@@ -1,0 +1,111 @@
+HELPER org.jboss.byteman.koubsky.LogHelper
+
+#Log call of service method of a servlet delegate
+RULE logWSFServlet.service
+CLASS org.jboss.wsf.spi.deployment.WSFServlet
+METHOD service(HttpServletRequest, HttpServletResponse)
+AT INVOKE org.jboss.wsf.spi.deployment.ServletDelegate.service(HttpServletRequest, HttpServletResponse, ServletContext)
+IF true
+DO log($CLASS, "DEBUG", "(Method service) Servlet delegate is not null, calling service method of the following delegate: "
+						+ $0.delegate)
+ENDRULE
+
+#Log null servlet delegate
+RULE logWSFServlet.service.nullDelegate
+CLASS org.jboss.wsf.spi.deployment.WSFServlet
+METHOD service(HttpServletRequest, HttpServletResponse)
+AT ENTRY
+IF $0.delegate == null
+DO log($CLASS, "DEBUG", "(Method service) Servlet delegate is null, do nothing.")
+ENDRULE
+
+#Log invoking request handler call
+RULE logCXFServletExt.invoke
+CLASS org.jboss.wsf.stack.cxf.CXFServletExt
+METHOD invoke(HttpServletRequest, HttpServletResponse)
+AT ENTRY
+IF true
+DO log($CLASS, "DEBUG", "(Method invoke) Invoking request handler call...")
+ENDRULE
+
+#Log calling request handler
+RULE logServletHelper.callRequestHandler
+CLASS org.jboss.wsf.stack.cxf.transport.ServletHelper
+METHOD callRequestHandler(HttpServletRequest, HttpServletResponse, ServletContext, Bus, Endpoint)
+AT ENTRY
+IF true
+DO log($CLASS, "DEBUG", "(Method callRequestHandler) Calling request handler with following params:\n" + 
+						"ServletContext: " + $ctx + "\nBus: " + $bus + "\nEndpoint: " + $endpoint)
+ENDRULE
+
+#Log setting default bus
+RULE logServletHelper.callRequestHandler.setDefualtBus
+CLASS org.jboss.wsf.stack.cxf.transport.ServletHelper
+METHOD callRequestHandler(HttpServletRequest, HttpServletResponse, ServletContext, Bus, Endpoint)
+AT INVOKE org.apache.cxf.BusFactory.setThreadDefaultBus(Bus)
+IF true
+DO log($CLASS, "DEBUG", "(Method callRequestHandler) Setting default bus for the current thread.")
+ENDRULE
+
+#Log setting endpoint
+RULE logServletHelper.callRequestHandler.setEndpoint
+CLASS org.jboss.wsf.stack.cxf.transport.ServletHelper
+METHOD callRequestHandler(HttpServletRequest, HttpServletResponse, ServletContext, Bus, Endpoint)
+AT INVOKE org.jboss.wsf.spi.invocation.EndpointAssociation.setEndpoint(Endpoint)
+IF true
+DO log($CLASS, "DEBUG", "(Method callRequestHandler) Setting endpoint metadata for thread.")
+ENDRULE
+
+#Log handling request
+RULE logServletHelper.callRequestHandler.handleRequest
+CLASS org.jboss.wsf.stack.cxf.transport.ServletHelper
+METHOD callRequestHandler(HttpServletRequest, HttpServletResponse, ServletContext, Bus, Endpoint)
+AT INVOKE org.jboss.wsf.spi.invocation.RequestHandler.handleHttpRequest(Endpoint, HttpServletRequest, HttpServletResponse, ServletContext)
+IF true
+DO log($CLASS, "DEBUG", "(Method callRequestHandler) Handling request by following request handler: " + $requestHandler)
+ENDRULE
+
+#Log removing endpoint
+RULE logServletHelper.callRequestHandler.removeEndpoint
+CLASS org.jboss.wsf.stack.cxf.transport.ServletHelper
+METHOD callRequestHandler(HttpServletRequest, HttpServletResponse, ServletContext, Bus, Endpoint)
+AT INVOKE org.jboss.wsf.spi.invocation.EndpointAssociation.removeEndpoint() ALL
+IF true
+DO log($CLASS, "DEBUG", "(Method callRequestHandler) Removing endpoint metadata from thread.")
+ENDRULE
+
+#Log setting null default bus
+RULE logServletHelper.callRequestHandler.setNullDefualtBus
+CLASS org.jboss.wsf.stack.cxf.transport.ServletHelper
+METHOD callRequestHandler(HttpServletRequest, HttpServletResponse, ServletContext, Bus, Endpoint)
+AFTER INVOKE org.jboss.wsf.spi.invocation.EndpointAssociation.removeEndpoint() ALL
+IF true
+DO log($CLASS, "DEBUG", "(Method callRequestHandler) Setting default bus to NULL for the current thread.")
+ENDRULE
+
+#Log trying to handle query
+RULE logRequestHandlerImpl.handleHttpRequest.handleQuery
+CLASS org.jboss.wsf.stack.cxf.RequestHandlerImpl
+METHOD handleHttpRequest(Endpoint, HttpServletRequest, HttpServletResponse, ServletContext) 
+AT INVOKE org.jboss.wsf.stack.cxf.RequestHandlerImpl.handleQuery(HttpServletRequest, HttpServletResponse, AbstractHTTPDestination, Bus)
+IF true
+DO log($CLASS, "DEBUG", "(Method handleHttpRequest) Trying to handle a query of an request. Trying to look up the query handler and handle the request message.")
+ENDRULE
+
+#Log request handled
+RULE logRequestHandlerImpl.handleHttpRequest.requestHandled
+CLASS org.jboss.wsf.stack.cxf.RequestHandlerImpl
+METHOD handleHttpRequest(Endpoint, HttpServletRequest, HttpServletResponse, ServletContext) 
+AFTER WRITE $requestHandled
+IF true
+DO log($CLASS, "DEBUG", "(Method handleHttpRequest) Result of the request handled: " + $requestHandled)
+ENDRULE
+
+#Log invoking on destination
+RULE logRequestHandlerImpl.handleHttpRequest.invokeDestination
+CLASS org.jboss.wsf.stack.cxf.RequestHandlerImpl
+METHOD handleHttpRequest(Endpoint, HttpServletRequest, HttpServletResponse, ServletContext) 
+AT INVOKE org.apache.cxf.transport.http.AbstractHTTPDestination.invoke(ServletConfig, ServletContext, HttpServletRequest, HttpServletResponse)
+IF true
+DO log($CLASS, "DEBUG", "(Method handleHttpRequest) Request has not been successfully handled, invoking destination: " + $dest)
+ENDRULE
