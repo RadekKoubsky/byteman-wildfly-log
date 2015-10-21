@@ -80,7 +80,7 @@ CLASS org.jboss.wsf.stack.cxf.transport.ServletHelper
 METHOD callRequestHandler(HttpServletRequest, HttpServletResponse, ServletContext, Bus, Endpoint)
 AFTER INVOKE org.jboss.wsf.spi.invocation.EndpointAssociation.removeEndpoint() ALL
 IF true
-DO log($CLASS, "DEBUG", "(Method callRequestHandler) Setting default bus to NULL for the current thread.")
+DO log($CLASS, "DEBUG", "(Method callRequestHandler) Setting default bus to null for the current thread.")
 ENDRULE
 
 #Log trying to handle query
@@ -108,4 +108,105 @@ METHOD handleHttpRequest(Endpoint, HttpServletRequest, HttpServletResponse, Serv
 AT INVOKE org.apache.cxf.transport.http.AbstractHTTPDestination.invoke(ServletConfig, ServletContext, HttpServletRequest, HttpServletResponse)
 IF true
 DO log($CLASS, "DEBUG", "(Method handleHttpRequest) Request has not been successfully handled, invoking destination: " + $dest)
+ENDRULE
+
+#Log calling from incoming message
+RULE logChainInitiationObserver.onMessage
+CLASS org.apache.cxf.transport.ChainInitiationObserver
+METHOD onMessage(Message)
+AT ENTRY
+IF true
+DO log($CLASS, "DEBUG", "(Method onMessage) Call from incoming message: " + $1)
+ENDRULE
+
+#Log setting interecptor chain
+RULE logChainInitiationObserver.onMessage.setInterceptorChain
+CLASS org.apache.cxf.transport.ChainInitiationObserver
+METHOD onMessage(Message)
+AT INVOKE org.apache.cxf.message.Message.setInterceptorChain(InterceptorChain)
+IF true
+DO log($CLASS, "DEBUG", "(Method onMessage) Setting interceptor chain to the message, chain: " + $phaseChain)
+ENDRULE
+
+#Log setting fault observer
+RULE logChainInitiationObserver.onMessage.setFaultObserver
+CLASS org.apache.cxf.transport.ChainInitiationObserver
+METHOD onMessage(Message)
+AT INVOKE org.apache.cxf.interceptor.InterceptorChain.setFaultObserver(MessageObserver)
+IF true
+DO log($CLASS, "DEBUG", "(Method onMessage) Setting fault observer to interceptor chain, observer:" + $0.endpoint.getOutFaultObserver())
+ENDRULE
+
+#Log interception
+RULE logChainInitiationObserver.onMessage.doIntercept
+CLASS org.apache.cxf.transport.ChainInitiationObserver
+METHOD onMessage(Message)
+AT INVOKE org.apache.cxf.interceptor.InterceptorChain.doIntercept(Message)
+IF true
+DO log($CLASS, "DEBUG", "(Method onMessage) Doing interception with interceptor chain.")
+ENDRULE
+
+#Log getting invoker
+RULE logServiceInvokerInterceptor.handleMessage.getInvoker
+CLASS org.apache.cxf.interceptor.ServiceInvokerInterceptor
+METHOD handleMessage(Message)
+AFTER WRITE $invoker
+IF true
+DO log($CLASS, "DEBUG", "(Method handleMessage) Getting invoker from service:\nService: "+ $service + "\nInvoker: " + $invoker)
+ENDRULE
+
+#Log executing command
+RULE logServiceInvokerInterceptor.handleMessage.execute
+CLASS org.apache.cxf.interceptor.ServiceInvokerInterceptor
+METHOD handleMessage(Message)
+AT INVOKE java.util.concurrent.Executor.execute(Runnable)
+IF true
+DO log($CLASS, "DEBUG", "(Method handleMessage) Executing command by executor, command: " + $o);
+ENDRULE
+
+#Log performing invocation
+RULE logJBossWSInvoker.performInvocation
+CLASS org.jboss.wsf.stack.cxf.JBossWSInvoker
+METHOD performInvocation(Exchange, Object, Method, Object[])
+AT ENTRY
+IF true
+DO log($CLASS, "DEBUG", "(Method performInvocation) Performing invocation of the JBoss AS target bean with following parameters:"
+						+ "\nExchange: " + $exchange + "\nService object: " + $serviceObject + "\nMethod: " + $m + "\nMethod params: " +
+						java.util.Arrays.toString($paramArray));
+ENDRULE
+
+#Log getting default bus
+RULE logJBossWSInvoker.performInvocation.getBus
+CLASS org.jboss.wsf.stack.cxf.JBossWSInvoker
+METHOD performInvocation(Exchange, Object, Method, Object[])
+AFTER WRITE $threadBus
+IF true
+DO log($CLASS, "DEBUG", "(Method performInvocation) Getting thread default bus for current thread, bus: " + $threadBus);
+ENDRULE
+
+#Log invoking the service endpoint
+RULE logJBossWSInvoker.performInvocation.invoke
+CLASS org.jboss.wsf.stack.cxf.JBossWSInvoker
+METHOD performInvocation(Exchange, Object, Method, Object[])
+AT INVOKE org.jboss.wsf.spi.invocation.InvocationHandler.invoke(Endpoint, Invocation)
+IF true
+DO log($CLASS, "DEBUG", "(Method performInvocation) Invoking the service endpoint by invocation handler, handler: " + $invHandler);
+ENDRULE
+
+#Log setting null default bus
+RULE logJBossWSInvoker.performInvocation.setNullBus
+CLASS org.jboss.wsf.stack.cxf.JBossWSInvoker
+METHOD performInvocation(Exchange, Object, Method, Object[])
+AT INVOKE org.apache.cxf.BusFactory.setThreadDefaultBus(Bus) 1
+IF true
+DO log($CLASS, "DEBUG", "(Method performInvocation) Setting thread default bus to null.");
+ENDRULE
+
+#Log setting default bus
+RULE logJBossWSInvoker.performInvocation.setBus
+CLASS org.jboss.wsf.stack.cxf.JBossWSInvoker
+METHOD performInvocation(Exchange, Object, Method, Object[])
+AT INVOKE org.apache.cxf.BusFactory.setThreadDefaultBus(Bus) 3
+IF true
+DO log($CLASS, "DEBUG", "(Method performInvocation) Restoring thread default bus.");
 ENDRULE
