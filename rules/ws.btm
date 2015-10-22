@@ -210,3 +210,40 @@ AT INVOKE org.apache.cxf.BusFactory.setThreadDefaultBus(Bus) 3
 IF true
 DO log($CLASS, "DEBUG", "(Method performInvocation) Restoring thread default bus.");
 ENDRULE
+
+#Log process invocation
+RULE logWSComponentInstanceAssociationInterceptor.processInvocation
+CLASS org.jboss.as.webservices.deployers.WSComponentInstanceAssociationInterceptor
+METHOD processInvocation(InterceptorContext)
+AT ENTRY
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Associating component instance for a POJO WS bean.");
+ENDRULE
+
+#Log getting component instance
+RULE logWSComponentInstanceAssociationInterceptor.processInvocation.getComponentInstance
+CLASS org.jboss.as.webservices.deployers.WSComponentInstanceAssociationInterceptor
+METHOD processInvocation(InterceptorContext)
+AT WRITE $pojoComponentInstance
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Getting component instance from WS component.");
+ENDRULE
+
+#Log putting component instance to interceptor context
+RULE logWSComponentInstanceAssociationInterceptor.processInvocation.putData
+CLASS org.jboss.as.webservices.deployers.WSComponentInstanceAssociationInterceptor
+METHOD processInvocation(InterceptorContext)
+AT INVOKE putPrivateData(Class, Object)
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Putting component instance to interceptor context:" +
+						"\nClass: " + $@[1] + "\nInstance: " + $@[2]);
+ENDRULE
+
+#Log passing invocation
+RULE logWSComponentInstanceAssociationInterceptor.processInvocation.proceed
+CLASS org.jboss.as.webservices.deployers.WSComponentInstanceAssociationInterceptor
+METHOD processInvocation(InterceptorContext)
+AT INVOKE org.jboss.invocation.InterceptorContext.proceed()
+IF true
+DO log($CLASS, "DEBUG", "(Method processInvocation) Passing the invocation on to the next step in the chain.");
+ENDRULE
