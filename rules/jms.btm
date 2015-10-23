@@ -9,3 +9,103 @@ IF true
 DO log($CLASS, "DEBUG", "(Method channelRead) Reading channel, getting buffer from the message, buffer: " + $buffer)
 ENDRULE
 
+#Log buffer received
+RULE logRemotingServiceImpl.DelegatingBufferHandler.bufferReceived
+CLASS org.hornetq.core.remoting.server.impl.RemotingServiceImpl$DelegatingBufferHandler
+METHOD bufferReceived(Object, HornetQBuffer)
+AT ENTRY
+IF true
+DO log($CLASS, "DEBUG", "(Method bufferReceived) Buffer is received, trying to get connection with id: " + $connectionID)
+ENDRULE
+
+#Log call buffer received
+RULE logRemotingServiceImpl.DelegatingBufferHandler.bufferReceived.callBufferReceived
+CLASS org.hornetq.core.remoting.server.impl.RemotingServiceImpl$DelegatingBufferHandler
+METHOD bufferReceived(Object, HornetQBuffer)
+AT INVOKE org.hornetq.spi.core.protocol.RemotingConnection.bufferReceived(Object, HornetQBuffer)
+IF true
+DO log($CLASS, "DEBUG", "(Method bufferReceived) Connection entry is not null, calling buffer received by connection: " + $conn.connection)
+ENDRULE
+
+#Log getting channel
+RULE logRemotingConnectionImpl.doBufferReceived.getChannel
+CLASS org.hornetq.core.protocol.core.impl.RemotingConnectionImpl
+METHOD doBufferReceived(Packet)
+AFTER WRITE $channel
+IF true
+DO log($CLASS, "DEBUG", "(Method doBufferReceived) Getting channel which handles receiving packet, channel: " + $channel)
+ENDRULE
+
+#Log handling packet
+RULE logRemotingConnectionImpl.doBufferReceived.handlePacket
+CLASS org.hornetq.core.protocol.core.impl.RemotingConnectionImpl
+METHOD doBufferReceived(Packet)
+AT INVOKE org.hornetq.core.protocol.core.Channel.handlePacket(Packet)
+IF true
+DO log($CLASS, "DEBUG", "(Method doBufferReceived) The packed is received, start processing the packet.")
+ENDRULE
+
+#Log null channel
+RULE logRemotingConnectionImpl.doBufferReceived.nullChannel
+CLASS org.hornetq.core.protocol.core.impl.RemotingConnectionImpl
+METHOD doBufferReceived(Packet)
+AFTER WRITE $channel
+IF $channel == null
+DO log($CLASS, "DEBUG", "(Method doBufferReceived) The channel is null, do nothing.")
+ENDRULE
+
+#Log handle packet with type PACKETS_CONFIRMED
+RULE logChannelImpl.handlePacket.CONFIRMED
+CLASS org.hornetq.core.protocol.core.impl.ChannelImpl
+METHOD handlePacket(Packet)
+AT INVOKE org.hornetq.core.protocol.core.ChannelHandler.handlePacket(Packet) 1
+IF true
+DO log($CLASS, "DEBUG", "(Method handlePacket) Packet is type of PACKETS_CONFIRMED and remoting connection is server, " +
+						"handling packet with following handler: " + $0.handler)
+ENDRULE
+
+#Log confirmation
+RULE logChannelImpl.handlePacket.Confirmation
+CLASS org.hornetq.core.protocol.core.impl.ChannelImpl
+METHOD handlePacket(Packet)
+AT INVOKE org.hornetq.core.protocol.core.impl.ChannelImpl.confirm(Packet)
+IF true
+DO log($CLASS, "DEBUG", "(Method handlePacket) Packet is being sent in response to a previously received packet, sending confirmation.")
+ENDRULE
+
+#Log acquiring lock
+RULE logChannelImpl.handlePacket.lock
+CLASS org.hornetq.core.protocol.core.impl.ChannelImpl
+METHOD handlePacket(Packet)
+AT INVOKE java.util.concurrent.locks.Lock.lock()
+IF true
+DO log($CLASS, "DEBUG", "(Method handlePacket) Acquiring lock for assigning packet to response.")
+ENDRULE
+
+#Log assign packet to response
+RULE logChannelImpl.handlePacket.assignPacket
+CLASS org.hornetq.core.protocol.core.impl.ChannelImpl
+METHOD handlePacket(Packet)
+AT INVOKE java.util.concurrent.locks.Condition.signal()
+IF true
+DO log($CLASS, "DEBUG", "(Method handlePacket) Packet has been assigned to response.")
+ENDRULE
+
+#Log releasing lock
+RULE logChannelImpl.handlePacket.unlock
+CLASS org.hornetq.core.protocol.core.impl.ChannelImpl
+METHOD handlePacket(Packet)
+AT INVOKE java.util.concurrent.locks.Lock.unlock() ALL
+IF true
+DO log($CLASS, "DEBUG", "(Method handlePacket) Releasing lock...")
+ENDRULE
+
+#Log handle packet which is not type of PACKETS_CONFIRMED
+RULE logChannelImpl.handlePacket.NOT_CONFIRMED
+CLASS org.hornetq.core.protocol.core.impl.ChannelImpl
+METHOD handlePacket(Packet)
+AT INVOKE org.hornetq.core.protocol.core.ChannelHandler.handlePacket(Packet) 2
+IF true
+DO log($CLASS, "DEBUG", "(Method handlePacket) Packet is not type of PACKETS_CONFIRMED and it is not being "
+						+ "sent in response to a previously received packet, handling packet with following handler: " + $0.handler)
+ENDRULE
