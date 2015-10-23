@@ -1,0 +1,11 @@
+HELPER org.jboss.byteman.koubsky.LogHelper
+
+#Log reading channel
+RULE logHornetQChannelHandler.channelRead
+CLASS org.hornetq.core.remoting.impl.netty.HornetQChannelHandler
+METHOD channelRead(ChannelHandlerContext, Object)
+AFTER WRITE $buffer
+IF true
+DO log($CLASS, "DEBUG", "(Method channelRead) Reading channel, getting buffer from the message, buffer: " + $buffer)
+ENDRULE
+
