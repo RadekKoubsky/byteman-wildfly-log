@@ -109,3 +109,167 @@ IF true
 DO log($CLASS, "DEBUG", "(Method handlePacket) Packet is not type of PACKETS_CONFIRMED and it is not being "
 						+ "sent in response to a previously received packet, handling packet with following handler: " + $0.handler)
 ENDRULE
+
+#Log packet type
+RULE logServerSessionPacketHandler.handlePacket.packetType
+CLASS org.hornetq.core.protocol.core.ServerSessionPacketHandler
+METHOD handlePacket(Packet)
+AFTER WRITE $type
+IF true
+DO log($CLASS, "DEBUG", "(Method handlePacket) Handling packet of type: " + $type)
+ENDRULE
+
+#Log set context
+RULE logServerSessionPacketHandler.handlePacket.setContext
+CLASS org.hornetq.core.protocol.core.ServerSessionPacketHandler
+METHOD handlePacket(Packet)
+AT INVOKE org.hornetq.core.persistence.StorageManager.setContext(OperationContext)
+IF true
+DO log($CLASS, "DEBUG", "(Method handlePacket) Setting context back to thread, context: " + $0.session.getSessionContext())
+ENDRULE
+
+#Log clear context
+RULE logServerSessionPacketHandler.handlePacket.clearContext
+CLASS org.hornetq.core.protocol.core.ServerSessionPacketHandler
+METHOD handlePacket(Packet)
+AT INVOKE org.hornetq.core.persistence.StorageManager.clearContext() ALL
+IF true
+DO log($CLASS, "DEBUG", "(Method handlePacket) Clearing context by storage manager.")
+ENDRULE
+
+#Log clear context
+RULE logServerSessionPacketHandler.sendResponse
+CLASS org.hornetq.core.protocol.core.ServerSessionPacketHandler
+METHOD sendResponse(Packet, Packet, boolean, boolean)
+AT ENTRY
+IF true
+DO log($CLASS, "DEBUG", "(Method sendResponse) Sending response to client:\n" + "Confirm packet: " + $confirmPacket + 
+						"\nResponse packet: " + $response)
+ENDRULE
+
+#Log closing session
+RULE logServerSessionImpl.close
+CLASS org.hornetq.core.server.impl.ServerSessionImpl
+METHOD close(boolean)
+AT ENTRY
+IF true
+DO log($CLASS, "DEBUG", "(Method close) Trying to close session...")
+ENDRULE
+
+#Log session already closed
+RULE logServerSessionImpl.alreadyClosed
+CLASS org.hornetq.core.server.impl.ServerSessionImpl
+METHOD close(boolean)
+AT ENTRY
+IF $0.closed
+DO log($CLASS, "DEBUG", "(Method close) Session is already closed, do nothing.")
+ENDRULE
+
+#Log successfully closed session
+RULE logServerSessionImpl.closed
+CLASS org.hornetq.core.server.impl.ServerSessionImpl
+METHOD doClose(boolean)
+AT EXIT
+IF $0.closed
+DO log($CLASS, "DEBUG", "(Method doClose) Session has been successfully closed.")
+ENDRULE
+
+#Log trying to delete queue
+RULE logServerSessionImpl.deleteQueue
+CLASS org.hornetq.core.server.impl.ServerSessionImpl
+METHOD deleteQueue(SimpleString)
+AT ENTRY
+IF true
+DO log($CLASS, "DEBUG", "(Method deleteQueue) Trying to delete queue: " + $queueToDelete)
+ENDRULE
+
+#Log queue deleted
+RULE logServerSessionImpl.deleteQueue.deleted
+CLASS org.hornetq.core.server.impl.ServerSessionImpl
+METHOD deleteQueue(SimpleString)
+AT EXIT
+IF true
+DO log($CLASS, "DEBUG", "(Method deleteQueue) Queue has been successfully deleted.")
+ENDRULE
+
+#Log execute query
+RULE logServerSessionImpl.executeQueueQuery
+CLASS org.hornetq.core.server.impl.ServerSessionImpl
+METHOD executeQueueQuery(SimpleString)
+AT ENTRY
+IF $name != null
+DO log($CLASS, "DEBUG", "(Method executeQueueQuery) Executing queue query with name: " + $name)
+ENDRULE
+
+#Log execute binding query
+RULE logServerSessionImpl.executeBindingQuery
+CLASS org.hornetq.core.server.impl.ServerSessionImpl
+METHOD executeBindingQuery(SimpleString)
+AT ENTRY
+IF $address != null
+DO log($CLASS, "DEBUG", "(Method executeBindingQuery) Executing binding query with address: " + $address)
+ENDRULE
+
+#Log expiring message
+RULE logServerSessionImpl.expire
+CLASS org.hornetq.core.server.impl.ServerSessionImpl
+METHOD expire(long, long)
+AT INVOKE org.hornetq.core.server.Queue.expire(MessageReference)
+IF true
+DO log($CLASS, "DEBUG", "(Method expire) Expiring message: message id = " + $messageID + ", consumer = " + $consumerID)
+ENDRULE
+
+#Log trying to commit
+RULE logServerSessionImpl.commit
+CLASS org.hornetq.core.server.impl.ServerSessionImpl
+METHOD commit()
+AT ENTRY
+IF true
+DO log($CLASS, "DEBUG", "(Method commit) Trying to commit following transaction: " + $0.tx)
+ENDRULE
+
+#Log successfully committed
+RULE logServerSessionImpl.committed
+CLASS org.hornetq.core.server.impl.ServerSessionImpl
+METHOD commit()
+AT EXIT
+IF true
+DO log($CLASS, "DEBUG", "(Method commit) Transaction has been successfully committed.")
+ENDRULE
+
+#Log rollback
+RULE logServerSessionImpl.rollback
+CLASS org.hornetq.core.server.impl.ServerSessionImpl
+METHOD doRollback(boolean, boolean, Transaction)
+AT ENTRY
+IF true
+DO log($CLASS, "DEBUG", "(Method rollback) Trying to rollback transaction: clientFailed = " + $clientFailed +
+						", lastMessageAsDelived = " + $lastMessageAsDelived + ", transaction = " + $theTx)
+ENDRULE
+
+#Log rollback success
+RULE logServerSessionImpl.rollbackSuccess
+CLASS org.hornetq.core.server.impl.ServerSessionImpl
+METHOD doRollback(boolean, boolean, Transaction)
+AT EXIT
+IF true
+DO log($CLASS, "DEBUG", "(Method rollback) Rollback has been successfully done.")
+ENDRULE
+
+#Log sending message
+RULE logServerSessionImpl.send
+CLASS org.hornetq.core.server.impl.ServerSessionImpl
+METHOD doSend(ServerMessage, boolean)
+AT ENTRY
+IF true
+DO log($CLASS, "DEBUG", "(Method doSend) Trying to send server message: " + $msg + ", direct = " + $direct)
+ENDRULE
+
+#Log successfully sent
+RULE logServerSessionImpl.sendOK
+CLASS org.hornetq.core.server.impl.ServerSessionImpl
+METHOD doSend(ServerMessage, boolean)
+AT EXIT
+IF true
+DO log($CLASS, "DEBUG", "(Method doSend) Message has been successfully sent.")
+ENDRULE
