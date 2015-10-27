@@ -735,7 +735,7 @@ ENDRULE
 RULE logStatefulSessionSynchronizationInterceptor.processInvocation.popOwner
 CLASS org.jboss.as.ejb3.component.stateful.StatefulSessionSynchronizationInterceptor
 METHOD processInvocation(InterceptorContext)
-AT INVOKE org.jboss.as.ejb3.tx.OwnableReentrantLock.popOwner()
+AT INVOKE org.jboss.as.ejb3.tx.OwnableReentrantLock.popOwner() ALL
 IF true
 DO log($CLASS, "DEBUG", "(Method processInvocation) Popping lock owner off the lock.")
 ENDRULE
