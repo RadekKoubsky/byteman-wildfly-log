@@ -23,7 +23,7 @@ public class ServletHandlerLog extends Helper{
         final Logger logger = LogManager.getLogManager().getLogger(clazz);
         if(logger != null){
             final Level level = Level.parse("DEBUG");
-            logger.log(level, "Request coockies:");
+            logger.log(level, "Request cookies:");
             final Map<String, Cookie> cookies = exchange.getRequestCookies();
             final Iterator<String> it = cookies.keySet().iterator();
             while(it.hasNext()) {
