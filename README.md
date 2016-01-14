@@ -33,6 +33,7 @@ To run byteman-wildfly-log:
 * download and install Byteman (https://community.jboss.org/wiki/ABytemanTutorial#how_do_i_download_and_install_byteman)
 
 Set env variables, for example in UBUNTU, edit the ${HOME}/.bashrc:
+
 export BYTEMAN_HOME=$HOME/Byteman/byteman-download-3.0.3
 export MODPLUGINJAR=${BYTEMAN_HOME}/contrib/jboss-modules-system/byteman-jboss-modules-plugin.jar
 export MODPLUGIN=org.jboss.byteman.modules.jbossmodules.JBossModulesSystem
