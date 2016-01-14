@@ -32,14 +32,13 @@ To run byteman-wildfly-log:
 * download Wildfly
 * download and install Byteman (https://community.jboss.org/wiki/ABytemanTutorial#how_do_i_download_and_install_byteman)
 
-Set env variables, for example in UBUNTU, edit the ${HOME}/.bashrc:
-
-export BYTEMAN_HOME=$HOME/Byteman/byteman-download-3.0.3
-export MODPLUGINJAR=${BYTEMAN_HOME}/contrib/jboss-modules-system/byteman-jboss-modules-plugin.jar
-export MODPLUGIN=org.jboss.byteman.modules.jbossmodules.JBossModulesSystem
+Set env variables, for example in UBUNTU, edit the ${HOME}/.bashrc:<br />
+export BYTEMAN_HOME=$HOME/Byteman/byteman-download-3.0.3<br />
+export MODPLUGINJAR=${BYTEMAN_HOME}/contrib/jboss-modules-system/byteman-jboss-modules-plugin.jar<br />
+export MODPLUGIN=org.jboss.byteman.modules.jbossmodules.JBossModulesSystem<br />
 export PATH=${PATH}:${BYTEMAN_HOME}/bin
 
-Set variable JAVA_OPTS in standalone.conf or domain.conf file in Wildfly directory like this:
+Set variable JAVA_OPTS in standalone.conf or domain.conf file in Wildfly directory like this:<br />
 JAVA_OPTS="$JAVA_OPTS -Dorg.jboss.byteman.transform.all -javaagent:${BYTEMAN_HOME}/lib/byteman.jar=script:${HOME}/byteman-wildfly-log/rules/jms.btm,script:${HOME}/byteman-wildfly-log/rules/servlets.btm,script:${HOME}/byteman-wildfly-log/rules/ejb.btm,script:${HOME}/byteman-wildfly-log/rules/rest.btm,script:${HOME}/byteman-wildfly-log/rules/ws.btm,listener:true,modules:${MODPLUGIN},sys:${MODPLUGINJAR}"
 
 Run Wildfly.
