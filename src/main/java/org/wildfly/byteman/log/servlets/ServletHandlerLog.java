@@ -1,4 +1,4 @@
-package org.jboss.byteman.koubsky.servlets;
+package org.wildfly.byteman.log.servlets;
 
 import io.undertow.server.HttpServerExchange;
 import io.undertow.server.handlers.Cookie;

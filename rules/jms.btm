@@ -1,4 +1,5 @@
-HELPER org.jboss.byteman.koubsky.LogHelper
+IMPORT org.wildfly.byteman.log
+HELPER org.wildfly.byteman.log.LogHelper
 
 #Log reading channel
 RULE logHornetQChannelHandler.channelRead

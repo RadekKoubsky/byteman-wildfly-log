@@ -1,4 +1,4 @@
-package org.jboss.byteman.koubsky;
+package org.wildfly.byteman.log;
 
 import java.util.logging.Level;
 import java.util.logging.LogManager;

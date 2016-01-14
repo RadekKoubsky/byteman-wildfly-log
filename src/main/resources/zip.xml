@@ -9,14 +9,14 @@
   <fileSets>
     <fileSet>
       <filtered>true</filtered>
-      <directory>${basedir}/rules</directory>
-      <outputDirectory>/${project.build.finalName}/rules</outputDirectory>
+      <directory>${basedir}/modules</directory>
+      <outputDirectory>/</outputDirectory>
     </fileSet>
   </fileSets>
   <files>
     <file>
       <source>target/${project.build.finalName}.jar</source>
-      <outputDirectory>${project.build.finalName}</outputDirectory>
+      <outputDirectory>/org/wildfly/byteman/log/main</outputDirectory>
     </file>
   </files>
 </assembly>
