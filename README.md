@@ -1,11 +1,11 @@
 # byteman-wildfly-log
 This project aims to provide extended logging capabilities for Wildfly application
- server without need to change the source code of the server. It uses Byteman (http://byteman.jboss.org/) to inject log messages to server bytecode.
+ server without need to change the source code of the server. It uses Byteman (http://byteman.jboss.org/) to inject new log events into server bytecode.
 
 ##Setup
 Build project with maven: `mvn clean package`
 
-Current build is used with wildfly-8.2.0.Final and Byteman 3.0.2. However, the rules should work in later releases of Wildfly if 
+Current build is used with wildfly-8.2.0.Final and Byteman 3.0.3. However, the rules should work in later releases of Wildfly if 
 there are no significant changes in source code.
 
 To run byteman-wildfly-log:
@@ -26,10 +26,10 @@ The logging mechanism consists of two parts:
 
 ###Log helper class
 This class uses `java.util.logging.LogManager` to obtain proper logger instance from logger name.
-Logger instance is used to create a log message with the following parameters: level, message and exception associated with the log message.
+Logger instance is used to create a log record with the following parameters: level, message and exception associated with the log record.
 The full package qualified logger name and parameters are passed by a byteman rule which uses the log helper class.
 
-Helper class contains two methods:
+The Helper class contains two methods:
 
 `public void log(final String loggerName, final String level, final String message)` <br>
 `public void log(final String loggerName, final String level, final String message, final Throwable thrown)`
@@ -68,7 +68,10 @@ produces log:
 
 ## Byteman vs JBoss modules class loading
 When a byteman rule passes a class from JBoss modules system to the log helper class, the ClassNotFoundException is thrown because the log helper class is loaded by different classloader.
-As a consequence of this, rules use dollar expression to build log message and passes it to log helper class as `java.lang.String`.
+As a consequence of this, rules use dollar expression to build log messages and pass them to log helper class as `java.lang.String`.
 
 After discussion with the author of Byteman, an experimental implementation of the classloading problem was made and is considered in the next version of Byteman.
 Full discussion can be viewed at https://developer.jboss.org/thread/261314
+ 
+*NOTE*: Classloading issue was implemented and is available in Byteman 3.0.3 in form of JBoss Modules plugin. However, this version of project (1.0.0) is implemented 
+without JBoss Modules plugin. To use the JBoss Modules plugin, please go to the next version of byteman-wildfly-log, see master branch.
