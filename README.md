@@ -50,7 +50,7 @@ The logging mechanism consists of two parts:
 * byteman rule
 
 ###Log helper class
-The helper class (`org.byteman.wildfly.log.LogHelper) uses `java.util.logging.LogManager` to obtain proper logger instance from logger name.
+The helper class (`org.byteman.wildfly.log.LogHelper`) uses `java.util.logging.LogManager` to obtain proper logger instance from logger name.
 Logger instance is used to create a log record with the following parameters: level, message and exception associated with the log record.
 The full package qualified logger name and parameters are passed by a byteman rule which uses the log helper class.
 
