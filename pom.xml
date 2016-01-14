@@ -10,7 +10,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<version.assembly.plugin>2.5.5</version.assembly.plugin>
 		<version.compiler.plugin>3.3</version.compiler.plugin>
-		<version.org.jboss.byteman>3.0.3</version.org.jboss.byteman>
+		<version.org.jboss.byteman>3.0.2-SNAPSHOT</version.org.jboss.byteman>
 	</properties>
   
    	<build>
@@ -44,20 +44,21 @@
 				</executions>
 			</plugin>
 		</plugins>
-	</build> 
+	</build>
+	
+	<repositories>  
+	  <repository>  
+	    <id>ow2</id>  
+	    <name>ow2 release repository</name>  
+	    <url>http://oss.sonatype.org/content/repositories/snapshots</url>  
+	    </repository>  
+	</repositories>  
   
 	<dependencies>
 		<dependency>
 			<groupId>org.jboss.byteman</groupId>
 			<artifactId>byteman</artifactId>
 			<version>${version.org.jboss.byteman}</version>
-			<scope>provided</scope>
-		</dependency>
-		
-		<dependency>
-			<groupId>io.undertow</groupId>
-			<artifactId>undertow-core</artifactId>
-			<version>1.1.0.Final</version>
 			<scope>provided</scope>
 		</dependency>
  	</dependencies>

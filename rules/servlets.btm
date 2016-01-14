@@ -11,17 +11,6 @@ DO log($CLASS, "DEBUG", "(Method handleRequest) Request info: " +
 		", method = " + $1.getRequestMethod() + ", query string: " + $1.getQueryString())
 ENDRULE
 
-#Log cookies - does not work with JBoss Modules plugin
-#RULE logServletHandler.handleRequest.cookies
-#CLASS io.undertow.servlet.handlers.ServletHandler
-#METHOD handleRequest(HttpServerExchange)
-#HELPER org.jboss.byteman.koubsky.servlets.ServletHandlerLog
-#IMPORT io.undertow.core
-#AT ENTRY
-#IF true
-#DO logCookie($CLASS, $1)
-#ENDRULE
-
 RULE logServletSecurityRoleHandler.handleRequest.canAccess
 CLASS io.undertow.servlet.handlers.security.ServletSecurityRoleHandler
 METHOD handleRequest(HttpServerExchange)
