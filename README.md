@@ -14,7 +14,7 @@ To run byteman-wildfly-log:
 * download and install Byteman (https://community.jboss.org/wiki/ABytemanTutorial#how_do_i_download_and_install_byteman)
 
 Set variable JAVA_OPTS in standalone.conf or domain.conf file in Wildfly directory like this:
-JAVA_OPTS="$JAVA_OPTS -Dorg.jboss.byteman.transform.all -javaagent:${BYTEMAN_HOME}/lib/byteman.jar=script:${HOME}/byteman-wildfly-log/rules/jms.btm,script:${HOME}/byteman-wildfly-log/rules/servlets.btm,script:${HOME}/byteman-wildfly-log/rules/ejb.btm,script:${HOME}/byteman-wildfly-log/rules/rest.btm,script:${HOME}/byteman-wildfly-log/rules/ws.btm,sys:${HOME}/byteman-wildfly-log/target/byteman-wildfly-log-0.0.1-SNAPSHOT.jar,listener:true"
+JAVA_OPTS="$JAVA_OPTS -Dorg.jboss.byteman.transform.all -javaagent:${BYTEMAN_HOME}/lib/byteman.jar=script:${HOME}/byteman-wildfly-log/rules/jms.btm,script:${HOME}/byteman-wildfly-log/rules/servlets.btm,script:${HOME}/byteman-wildfly-log/rules/ejb.btm,script:${HOME}/byteman-wildfly-log/rules/rest.btm,script:${HOME}/byteman-wildfly-log/rules/ws.btm,sys:${HOME}/byteman-wildfly-log/target/byteman-wildfly-log-1.0.0.jar,listener:true"
 
 Run Wildfly.
 
