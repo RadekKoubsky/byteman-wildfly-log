@@ -2,7 +2,7 @@ IMPORT org.wildfly.byteman.log
 IMPORT io.undertow.core  
 HELPER org.wildfly.byteman.log.LogHelper
  
-#Log cookies - does not work with JBoss Modules plugin
+#Log cookies
 RULE logServletHandler.handleRequest.cookies
 CLASS io.undertow.servlet.handlers.ServletHandler
 METHOD handleRequest(HttpServerExchange)
