@@ -93,7 +93,7 @@ produces log:
 
 ###Example of the JBoss Modules plugin
 The JBoss Modules plugin is used in one rule within the servlet.btm file to demonstrate its functionality. The rule employs the `org.byteman.wildfly.log.servlets.ServletHandlerLog` class as a rule helper.
-The rule helper manipulate with the `io.undertow.server.HttpServerExchange` class which is passed by the rule as an argument of the helper method "logCookie":
+The rule helper manipulates with the `io.undertow.server.HttpServerExchange` class which is passed by the rule as an argument of the helper method "logCookie":
 
 ```
 public void logCookie(final String clazz, final HttpServerExchange exchange)
