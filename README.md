@@ -9,7 +9,7 @@ The latest version of this project uses a new feature implemented in Byteman 3.0
 classes from JBoss Modules to Byteman log helper class and manipulate with them inside the log helper. In order to make this work, the log helper
  must be deployed as a separate module in JBoss Modules directory.
 
-##Setup
+## Setup
 Build project with maven: `mvn clean package`
 
 Unzip the archive created in `target/zip` folder to `$WILDFLY_HOME/modules/system/layers/base`.
@@ -43,13 +43,13 @@ JAVA_OPTS="$JAVA_OPTS -Dorg.jboss.byteman.transform.all -javaagent:${BYTEMAN_HOM
 
 Run Wildfly.
 
-##Description
+## Description
 The logging mechanism consists of two parts:
 
 * log helper class
 * byteman rule
 
-###Log helper class
+### Log helper class
 The helper class (`org.byteman.wildfly.log.LogHelper`) uses `java.util.logging.LogManager` to obtain proper logger instance from logger name.
 Logger instance is used to create a log record with the following parameters: level, message and exception associated with the log record.
 The full package qualified logger name and parameters are passed by a byteman rule which uses the log helper class.
@@ -62,7 +62,7 @@ The Helper class contains two methods:
 Format of a message within a log is defined as:
 [ThreadId-'id of the current thread'] + (Method 'method name') + message
 
-###Byteman rule
+### Byteman rule
 A byteman rule which is triggered at specific location in server bytecode.
 
 Rules are defined in directory ./rules and add logs to the following parts of Wildfly:
@@ -91,7 +91,7 @@ ENDRULE
 produces log:
 `19:08:44,507 DEBUG [io.undertow.servlet.handlers.ServletHandler] (default task-12) [ThreadId-300] (Method handleRequest) Request info:  URL = http://localhost:8080/wildfly-helloworld-ws, protocol = HTTP/1.1, method = GET, query string: wsdl`
 
-###Example of the JBoss Modules plugin
+### Example of the JBoss Modules plugin
 The JBoss Modules plugin is used in one rule within the servlet.btm file to demonstrate its functionality. The rule employs the `org.byteman.wildfly.log.servlets.ServletHandlerLog` class as a rule helper.
 The rule helper manipulates with the `io.undertow.server.HttpServerExchange` class which is passed by the rule as an argument of the helper method "logCookie":
 
